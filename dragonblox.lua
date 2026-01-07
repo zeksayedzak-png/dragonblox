@@ -1,22 +1,16 @@
--- Dragon Chalice Deep Scanner - Mobile Version
--- يعمل على الهاتف عبر loadstring(game:HttpGet(""))
+-- Dragon (East)-Dragon (East) Complete Analyzer
+-- للهاتف عبر loadstring(game:HttpGet(""))
 
 local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local UserInputService = game:GetService("UserInputService")
-local TextService = game:GetService("TextService")
 local localPlayer = Players.LocalPlayer
 
--- ============== متغيرات النظام ==============
-local isScanning = false
-local collectedData = nil
-local currentTab = 1
-local tabs = {"📊 المعلومات", "🔗 الروابط", "💻 السكربتات", "🔍 البحث العميق", "📋 النسخ"}
-local scanLogs = {}
+print("🐉 Dragon (East)-Dragon (East) Analyzer Loading...")
 
--- ============== دالة البحث عن النموذج ==============
-local function findDragonChalice()
-    local success, result = pcall(function()
+-- البحث عن النموذج المحدد
+local function FIND_DRAGON_MODEL()
+    print("\n🔍 Searching for Dragon (East)-Dragon (East)...")
+    
+    local success, model = pcall(function()
         return game:GetService("ReplicatedStorage")
             :WaitForChild("Assets")
             :WaitForChild("Models")
@@ -24,638 +18,554 @@ local function findDragonChalice()
             :WaitForChild("Dragon (East)-Dragon (East)")
     end)
     
-    if success then
-        return result, "✅ النموذج موجود!"
+    if success and model then
+        print("✅ Found: Dragon (East)-Dragon (East)")
+        print("📍 Path: ReplicatedStorage.Assets.Models.Chalices")
+        print("📦 Model Type: " .. model.ClassName)
+        
+        return model
     else
-        return nil, "❌ النموذج غير موجود: " .. tostring(result)
+        print("❌ NOT FOUND!")
+        print("💡 Check if path exists:")
+        print("   ReplicatedStorage: " .. tostring(game:GetService("ReplicatedStorage")))
+        print("   Assets: " .. tostring(game:GetService("ReplicatedStorage"):FindFirstChild("Assets")))
+        print("   Models: " .. tostring(game:GetService("ReplicatedStorage").Assets:FindFirstChild("Models")))
+        print("   Chalices: " .. tostring(game:GetService("ReplicatedStorage").Assets.Models:FindFirstChild("Chalices")))
+        return nil
     end
 end
 
--- ============== دالة البحث العميق SCAN_NOW ==============
-local function deepScanNow(model)
-    if isScanning then return end
-    isScanning = true
+-- جمع كل المعلومات عن النموذج
+local function ANALYZE_DRAGON_MODEL(model)
+    print("\n📊 Analyzing Dragon (East)-Dragon (East)...")
     
-    scanLogs = {}
-    table.insert(scanLogs, "🚀 بدء المسح العميق...")
-    table.insert(scanLogs, "⏰ " .. os.date("%H:%M:%S"))
-    
-    local scanResults = {
-        SecurityIssues = {},
-        HiddenScripts = {},
-        ExternalLinks = {},
-        LargeAssets = {},
-        SuspiciousContent = {}
+    local analysis = {
+        BasicInfo = {},
+        Meshes = {},
+        Textures = {},
+        Sounds = {},
+        Scripts = {},
+        Parts = {},
+        Children = {}
     }
     
-    -- 1. مسح كل الأصول
-    for _, descendant in pairs(model:GetDescendants()) do
-        -- اكتشاف السكربتات المخفية
-        if (descendant:IsA("Script") or descendant:IsA("LocalScript") or descendant:IsA("ModuleScript")) then
-            if descendant.Name:find("Secret") or descendant.Name:find("Hidden") or descendant.Name:find("Admin") then
-                table.insert(scanResults.HiddenScripts, {
-                    Object = descendant,
-                    Path = descendant:GetFullName(),
-                    Reason = "اسم مشبوه"
-                })
-            end
+    -- المعلومات الأساسية
+    analysis.BasicInfo = {
+        Name = model.Name,
+        ClassName = model.ClassName,
+        AssetId = model.AssetId or "N/A",
+        PrimaryPart = model.PrimaryPart and model.PrimaryPart.Name or "None",
+        ChildrenCount = #model:GetChildren(),
+        DescendantsCount = #model:GetDescendants()
+    }
+    
+    print("📦 Basic Info:")
+    print("   • Name: " .. analysis.BasicInfo.Name)
+    print("   • AssetId: " .. analysis.BasicInfo.AssetId)
+    print("   • Children: " .. analysis.BasicInfo.ChildrenCount)
+    print("   • Descendants: " .. analysis.BasicInfo.DescendantsCount)
+    
+    -- تحليل كل الأجزاء
+    local totalMeshes = 0
+    local totalTextures = 0
+    local totalSounds = 0
+    local totalScripts = 0
+    local totalParts = 0
+    
+    for _, obj in pairs(model:GetDescendants()) do
+        -- Parts
+        if obj:IsA("BasePart") then
+            table.insert(analysis.Parts, {
+                Name = obj.Name,
+                Class = obj.ClassName,
+                Size = obj.Size,
+                Position = obj.Position,
+                Color = obj.Color
+            })
+            totalParts = totalParts + 1
             
-            -- تحليل محتوى السكربت
-            local content = ""
-            if pcall(function() content = descendant.Source end) then
-                -- بحث عن كلمات مفتاحية خطيرة
-                local dangerousPatterns = {
-                    "loadstring", "HttpGet", "setclipboard", 
-                    "Instance.new", "FireServer", "InvokeServer",
-                    "game.Players", "LocalPlayer", "Backdoor"
-                }
-                
-                for _, pattern in ipairs(dangerousPatterns) do
-                    if content:find(pattern) then
-                        table.insert(scanResults.SecurityIssues, {
-                            Script = descendant.Name,
-                            Pattern = pattern,
-                            Line = content:match(".*" .. pattern .. ".*")
-                        })
-                    end
+            -- Meshes في Parts
+            if obj:IsA("MeshPart") then
+                if obj.MeshId and obj.MeshId ~= "" then
+                    table.insert(analysis.Meshes, {
+                        Name = obj.Name,
+                        Type = "MeshPart",
+                        MeshId = obj.MeshId,
+                        TextureId = obj.TextureID or "N/A"
+                    })
+                    totalMeshes = totalMeshes + 1
                 end
             end
         end
         
-        -- اكتشاف الروابط الخارجية
-        if descendant:IsA("Decal") or descendant:IsA("Texture") then
-            local assetId = descendant.Texture or ""
-            if assetId:find("http://") or assetId:find("https://") then
-                table.insert(scanResults.ExternalLinks, {
-                    Type = descendant.ClassName,
-                    Name = descendant.Name,
-                    URL = assetId
+        -- Meshes مستقلة
+        if obj:IsA("SpecialMesh") or obj:IsA("FileMesh") then
+            if obj.MeshId and obj.MeshId ~= "" then
+                table.insert(analysis.Meshes, {
+                    Name = obj.Name,
+                    Type = obj.ClassName,
+                    MeshId = obj.MeshId,
+                    TextureId = obj.TextureId or "N/A"
                 })
+                totalMeshes = totalMeshes + 1
             end
-        end
-        
-        -- اكتشاف الأصول الكبيرة
-        if descendant:IsA("BasePart") then
-            local size = descendant.Size
-            local volume = size.X * size.Y * size.Z
-            if volume > 1000 then
-                table.insert(scanResults.LargeAssets, {
-                    Part = descendant.Name,
-                    Size = size,
-                    Volume = math.floor(volume)
-                })
-            end
-        end
-        
-        -- اكتشاف محتوى مشبوه في StringValues
-        if descendant:IsA("StringValue") and #descendant.Value > 50 then
-            local value = descendant.Value
-            if value:find("eval") or value:find("execute") or value:find("compile") then
-                table.insert(scanResults.SuspiciousContent, {
-                    Name = descendant.Name,
-                    Type = "StringValue",
-                    Preview = value:sub(1, 100) .. "..."
-                })
-            end
-        end
-    end
-    
-    -- 2. فحص الروابط
-    table.insert(scanLogs, "🔗 فحص الروابط الخارجية...")
-    
-    -- 3. تحليل المخاطر
-    local riskLevel = "🟢 منخفض"
-    local issueCount = #scanResults.SecurityIssues + #scanResults.HiddenScripts
-    
-    if issueCount > 5 then
-        riskLevel = "🔴 عالي"
-    elseif issueCount > 2 then
-        riskLevel = "🟡 متوسط"
-    end
-    
-    -- 4. إنشاء التقرير
-    local report = {
-        "=== تقرير المسح العميق ===",
-        "📅 التاريخ: " .. os.date("%Y-%m-%d %H:%M:%S"),
-        "🎯 النموذج: " .. model.Name,
-        "⚠️ مستوى الخطورة: " .. riskLevel,
-        "",
-        "📊 النتائج:",
-        "🔒 مشاكل أمنية: " .. #scanResults.SecurityIssues,
-        "👁️ سكربتات مخفية: " .. #scanResults.HiddenScripts,
-        "🌐 روابط خارجية: " .. #scanResults.ExternalLinks,
-        "📦 أصول كبيرة: " .. #scanResults.LargeAssets,
-        "❓ محتوى مشبوه: " .. #scanResults.SuspiciousContent
-    }
-    
-    -- إضافة التفاصيل إذا وجدت مشاكل
-    if #scanResults.SecurityIssues > 0 then
-        table.insert(report, "\n🔒 مشاكل أمنية مفصل:")
-        for _, issue in ipairs(scanResults.SecurityIssues) do
-            table.insert(report, "  • " .. issue.Script .. " - " .. issue.Pattern)
-        end
-    end
-    
-    table.insert(scanLogs, "✅ اكتمل المسح العميق!")
-    table.insert(scanLogs, "📊 النتائج جاهزة للعرض")
-    
-    isScanning = false
-    return scanResults, report
-end
-
--- ============== دالة جمع Asset IDs ==============
-local function collectAllAssetIds(model)
-    local assetData = {
-        Model = {Name = model.Name, AssetId = model.AssetId},
-        Meshes = {}, Textures = {}, Sounds = {},
-        Animations = {}, Scripts = {}, OtherAssets = {}
-    }
-    
-    for _, obj in pairs(model:GetDescendants()) do
-        -- Meshes
-        if obj:IsA("MeshPart") then
-            table.insert(assetData.Meshes, {
-                Name = obj.Name,
-                AssetId = obj.MeshId,
-                Type = "MeshPart"
-            })
-        elseif obj:IsA("SpecialMesh") or obj:IsA("FileMesh") then
-            table.insert(assetData.Meshes, {
-                Name = obj.Name,
-                AssetId = obj.MeshId,
-                Type = obj.ClassName
-            })
         end
         
         -- Textures
         if obj:IsA("Decal") then
-            table.insert(assetData.Textures, {
-                Name = obj.Name,
-                AssetId = obj.Texture,
-                Type = "Decal"
-            })
+            if obj.Texture and obj.Texture ~= "" then
+                table.insert(analysis.Textures, {
+                    Name = obj.Name,
+                    Texture = obj.Texture,
+                    Face = obj.Face.Name
+                })
+                totalTextures = totalTextures + 1
+            end
         end
         
         -- Sounds
         if obj:IsA("Sound") then
-            table.insert(assetData.Sounds, {
-                Name = obj.Name,
-                AssetId = obj.SoundId,
-                Type = "Sound"
-            })
-        end
-        
-        -- Animations
-        if obj:IsA("Animation") then
-            table.insert(assetData.Animations, {
-                Name = obj.Name,
-                AssetId = obj.AnimationId,
-                Type = "Animation"
-            })
-        end
-        
-        -- Scripts
-        if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
-            local content = "غير قابل للقراءة"
-            local lineCount = 0
-            
-            if pcall(function() 
-                content = obj.Source
-                lineCount = #(string.split(content, "\n"))
-            end) then
-                table.insert(assetData.Scripts, {
+            if obj.SoundId and obj.SoundId ~= "" then
+                table.insert(analysis.Sounds, {
                     Name = obj.Name,
-                    Type = obj.ClassName,
-                    Content = content,
-                    LineCount = lineCount,
-                    Disabled = obj.Disabled
+                    SoundId = obj.SoundId,
+                    Volume = obj.Volume,
+                    Playing = obj.Playing
                 })
+                totalSounds = totalSounds + 1
             end
         end
         
-        -- Other
-        if obj:GetAttribute("AssetId") then
-            table.insert(assetData.OtherAssets, {
+        -- Scripts (الأهم!)
+        if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+            local scriptInfo = {
                 Name = obj.Name,
-                AssetId = obj:GetAttribute("AssetId"),
-                Type = obj.ClassName
+                Type = obj.ClassName,
+                Disabled = obj.Disabled,
+                SourceLength = 0,
+                Content = "N/A"
+            }
+            
+            -- محاولة قراءة الكود
+            if pcall(function() scriptInfo.Content = obj.Source end) then
+                scriptInfo.SourceLength = #scriptInfo.Content
+                scriptInfo.LineCount = #(string.split(scriptInfo.Content, "\n"))
+                
+                -- تحليل بسيط للكود
+                if #scriptInfo.Content > 0 then
+                    scriptInfo.HasLoadstring = scriptInfo.Content:find("loadstring") ~= nil
+                    scriptInfo.HasHttpGet = scriptInfo.Content:find("HttpGet") ~= nil
+                    scriptInfo.HasRemoteEvents = scriptInfo.Content:find("RemoteEvent") ~= nil
+                end
+            end
+            
+            table.insert(analysis.Scripts, scriptInfo)
+            totalScripts = totalScripts + 1
+        end
+        
+        -- Children مباشرة تحت النموذج
+        if obj.Parent == model then
+            table.insert(analysis.Children, {
+                Name = obj.Name,
+                Class = obj.ClassName
             })
         end
     end
     
-    return assetData
+    print("\n📊 Detailed Analysis:")
+    print("   • Parts: " .. totalParts)
+    print("   • Meshes: " .. totalMeshes)
+    print("   • Textures: " .. totalTextures)
+    print("   • Sounds: " .. totalSounds)
+    print("   • Scripts: " .. totalScripts)
+    
+    return analysis, totalParts, totalMeshes, totalTextures, totalSounds, totalScripts
 end
 
--- ============== واجهة المستخدم ==============
-local function createMobileUI()
+-- إنشاء رابط AssetDelivery
+local function GET_ASSET_LINKS(assetId)
+    if not assetId or assetId == "" or assetId == "N/A" then
+        return nil
+    end
+    
+    -- استخراج الرقم من assetId
+    local id = assetId:match("%d+")
+    if not id then
+        return nil
+    end
+    
+    return {
+        AssetDelivery = "https://assetdelivery.roblox.com/v1/asset/?id=" .. id,
+        RobloxCDN = "https://www.roblox.com/library/" .. id,
+        DirectLink = "rbxassetid://" .. id
+    }
+end
+
+-- واجهة الهاتف المخصصة
+local function CREATE_MOBILE_INTERFACE()
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "DeepScannerMobile"
+    screenGui.Name = "DragonAnalyzerMobile"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
     
     -- الإطار الرئيسي
     local mainFrame = Instance.new("Frame")
-    mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0.95, 0, 0.85, 0)
-    mainFrame.Position = UDim2.new(0.025, 0, 0.075, 0)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    mainFrame.BackgroundTransparency = 0.05
-    mainFrame.ClipsDescendants = true
+    mainFrame.Size = UDim2.new(0.95, 0, 0.9, 0)
+    mainFrame.Position = UDim2.new(0.025, 0, 0.05, 0)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+    mainFrame.BackgroundTransparency = 0.1
     mainFrame.Parent = screenGui
     
     -- العنوان
     local title = Instance.new("TextLabel")
-    title.Text = "🔍 Dragon Chalice Deep Scanner"
-    title.TextColor3 = Color3.fromRGB(0, 200, 255)
-    title.TextSize = 16
-    title.Font = Enum.Font.GothamBold
-    title.BackgroundTransparency = 1
-    title.Size = UDim2.new(1, 0, 0.07, 0)
-    title.Position = UDim2.new(0, 0, 0.01, 0)
+    title.Text = "🐉 Dragon (East)-Dragon (East) Analyzer"
+    title.Size = UDim2.new(1, 0, 0.08, 0)
+    title.BackgroundColor3 = Color3.fromRGB(60, 20, 80)
+    title.TextColor3 = Color3.new(1, 1, 1)
+    title.Font = Enum.Font.GothamBlack
+    title.TextScaled = true
     title.Parent = mainFrame
     
-    -- تبويبات التنقل
-    local tabFrame = Instance.new("Frame")
-    tabFrame.Name = "TabFrame"
-    tabFrame.Size = UDim2.new(1, 0, 0.08, 0)
-    tabFrame.Position = UDim2.new(0, 0, 0.09, 0)
-    tabFrame.BackgroundTransparency = 1
-    tabFrame.Parent = mainFrame
+    -- زر التحليل
+    local analyzeBtn = Instance.new("TextButton")
+    analyzeBtn.Text = "🔍 FIND & ANALYZE"
+    analyzeBtn.Size = UDim2.new(0.9, 0, 0.08, 0)
+    analyzeBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
+    analyzeBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    analyzeBtn.TextColor3 = Color3.new(1, 1, 1)
+    analyzeBtn.Font = Enum.Font.GothamBold
+    analyzeBtn.TextScaled = true
+    analyzeBtn.Parent = mainFrame
     
-    -- إنشاء التبويبات
-    for i, tabName in ipairs(tabs) do
-        local tabButton = Instance.new("TextButton")
-        tabButton.Name = "Tab_" .. i
-        tabButton.Text = tabName
-        tabButton.TextSize = 11
-        tabButton.Font = Enum.Font.Gotham
-        tabButton.TextColor3 = Color3.fromRGB(180, 180, 180)
-        tabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-        tabButton.BorderSizePixel = 0
-        tabButton.Size = UDim2.new(1/#tabs, -2, 1, 0)
-        tabButton.Position = UDim2.new((i-1)/#tabs, 0, 0, 0)
-        tabButton.Parent = tabFrame
-        
-        tabButton.MouseButton1Click:Connect(function()
-            currentTab = i
-            updateContent(currentTab)
-        end)
-    end
+    -- منطقة النتائج
+    local resultFrame = Instance.new("ScrollingFrame")
+    resultFrame.Name = "ResultFrame"
+    resultFrame.Size = UDim2.new(0.94, 0, 0.7, 0)
+    resultFrame.Position = UDim2.new(0.03, 0, 0.2, 0)
+    resultFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+    resultFrame.BackgroundTransparency = 0.2
+    resultFrame.ScrollBarThickness = 8
+    resultFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    resultFrame.Parent = mainFrame
     
-    -- منطقة المحتوى
-    local contentFrame = Instance.new("ScrollingFrame")
-    contentFrame.Name = "ContentFrame"
-    contentFrame.Size = UDim2.new(0.98, 0, 0.68, 0)
-    contentFrame.Position = UDim2.new(0.01, 0, 0.18, 0)
-    contentFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    contentFrame.BorderSizePixel = 0
-    contentFrame.ScrollBarThickness = 8
-    contentFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-    contentFrame.Parent = mainFrame
+    -- حالة
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Text = "Ready to analyze Dragon (East)-Dragon (East)..."
+    statusLabel.Size = UDim2.new(0.94, 0, 0.05, 0)
+    statusLabel.Position = UDim2.new(0.03, 0, 0.92, 0)
+    statusLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    statusLabel.TextColor3 = Color3.new(1, 1, 1)
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.TextWrapped = true
+    statusLabel.Parent = mainFrame
     
-    -- شريط التحكم السفلي
-    local controlFrame = Instance.new("Frame")
-    controlFrame.Name = "ControlFrame"
-    controlFrame.Size = UDim2.new(1, 0, 0.12, 0)
-    controlFrame.Position = UDim2.new(0, 0, 0.87, 0)
-    controlFrame.BackgroundTransparency = 1
-    controlFrame.Parent = mainFrame
+    -- زر نسخ الكل
+    local copyAllBtn = Instance.new("TextButton")
+    copyAllBtn.Text = "📋 COPY ALL INFO"
+    copyAllBtn.Size = UDim2.new(0.45, 0, 0.07, 0)
+    copyAllBtn.Position = UDim2.new(0.03, 0, 0.85, 0)
+    copyAllBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
+    copyAllBtn.TextColor3 = Color3.new(1, 1, 1)
+    copyAllBtn.Font = Enum.Font.GothamBold
+    copyAllBtn.TextScaled = true
+    copyAllBtn.Visible = false
+    copyAllBtn.Parent = mainFrame
     
-    -- زر المسح الأساسي
-    local scanButton = Instance.new("TextButton")
-    scanButton.Name = "ScanButton"
-    scanButton.Text = "🔍 مسح Dragon Chalice"
-    scanButton.TextSize = 14
-    scanButton.Font = Enum.Font.GothamBold
-    scanButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    scanButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-    scanButton.Size = UDim2.new(0.45, 0, 0.8, 0)
-    scanButton.Position = UDim2.new(0.025, 0, 0.1, 0)
-    scanButton.Parent = controlFrame
+    -- متغيرات التخزين
+    local currentAnalysis = nil
+    local allInfoText = ""
     
-    -- زر البحث العميق
-    local deepScanButton = Instance.new("TextButton")
-    deepScanButton.Name = "DeepScanButton"
-    deepScanButton.Text = "🚀 SCAN_NOW"
-    deepScanButton.TextSize = 14
-    deepScanButton.Font = Enum.Font.GothamBold
-    deepScanButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    deepScanButton.BackgroundColor3 = Color3.fromRGB(215, 80, 0)
-    deepScanButton.Size = UDim2.new(0.45, 0, 0.8, 0)
-    deepScanButton.Position = UDim2.new(0.525, 0, 0.1, 0)
-    deepScanButton.Parent = controlFrame
-    
-    -- دالة تحديث المحتوى
-    function updateContent(tabIndex)
-        contentFrame:ClearAllChildren()
-        
-        if not collectedData and tabIndex ~= 4 then
-            local message = Instance.new("TextLabel")
-            message.Text = "📭 لم يتم تحليل البيانات بعد.\nاضغط على '🔍 مسح Dragon Chalice' أولاً."
-            message.TextColor3 = Color3.fromRGB(255, 200, 100)
-            message.TextSize = 14
-            message.BackgroundTransparency = 1
-            message.Size = UDim2.new(1, 0, 0.3, 0)
-            message.Position = UDim2.new(0, 0, 0.3, 0)
-            message.TextWrapped = true
-            message.Parent = contentFrame
-            return
-        end
+    -- دالة عرض النتائج
+    local function DISPLAY_RESULTS(analysis, parts, meshes, textures, sounds, scripts)
+        resultFrame:ClearAllChildren()
         
         local yOffset = 10
         
-        if tabIndex == 1 then -- المعلومات
-            local infoText = Instance.new("TextLabel")
-            infoText.Text = string.format(
-                "📦 النموذج: %s\n📍 المسار: ReplicatedStorage.Assets.Models.Chalices\n🔢 إجمالي الأجزاء: %d\n\n📊 الإحصائيات:\n🔷 Meshes: %d\n🎨 Textures: %d\n🔊 Sounds: %d\n💃 Animations: %d\n💻 Scripts: %d",
-                collectedData.Model.Name,
-                #collectedData.Meshes + #collectedData.Textures + #collectedData.Sounds + #collectedData.Animations + #collectedData.Scripts,
-                #collectedData.Meshes,
-                #collectedData.Textures,
-                #collectedData.Sounds,
-                #collectedData.Animations,
-                #collectedData.Scripts
-            )
-            infoText.TextColor3 = Color3.fromRGB(200, 220, 255)
-            infoText.TextSize = 12
-            infoText.BackgroundTransparency = 1
-            infoText.Size = UDim2.new(0.96, 0, 0, 150)
-            infoText.Position = UDim2.new(0.02, 0, 0, yOffset)
-            infoText.TextWrapped = true
-            infoText.TextXAlignment = Enum.TextXAlignment.Left
-            infoText.Parent = contentFrame
-            yOffset += 160
+        -- المعلومات الأساسية
+        local basicInfoFrame = Instance.new("Frame")
+        basicInfoFrame.Size = UDim2.new(0.96, 0, 0, 100)
+        basicInfoFrame.Position = UDim2.new(0.02, 0, 0, yOffset)
+        basicInfoFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
+        basicInfoFrame.Parent = resultFrame
+        
+        local basicTitle = Instance.new("TextLabel")
+        basicTitle.Text = "📦 BASIC INFORMATION"
+        basicTitle.Size = UDim2.new(1, 0, 0.2, 0)
+        basicTitle.Position = UDim2.new(0, 0, 0, 0)
+        basicTitle.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
+        basicTitle.TextColor3 = Color3.new(1, 1, 1)
+        basicTitle.Font = Enum.Font.GothamBold
+        basicTitle.Parent = basicInfoFrame
+        
+        local basicText = Instance.new("TextLabel")
+        basicText.Text = string.format(
+            "Name: %s\nAssetId: %s\nChildren: %d\nDescendants: %d\nPrimary Part: %s",
+            analysis.BasicInfo.Name,
+            analysis.BasicInfo.AssetId,
+            analysis.BasicInfo.ChildrenCount,
+            analysis.BasicInfo.DescendantsCount,
+            analysis.BasicInfo.PrimaryPart
+        )
+        basicText.Size = UDim2.new(0.98, 0, 0.7, 0)
+        basicText.Position = UDim2.new(0.01, 0, 0.25, 0)
+        basicText.BackgroundTransparency = 1
+        basicText.TextColor3 = Color3.fromRGB(200, 220, 255)
+        basicText.Font = Enum.Font.Gotham
+        basicText.TextWrapped = true
+        basicText.TextXAlignment = Enum.TextXAlignment.Left
+        basicText.Parent = basicInfoFrame
+        
+        yOffset = yOffset + 110
+        
+        -- الإحصائيات
+        local statsFrame = Instance.new("Frame")
+        statsFrame.Size = UDim2.new(0.96, 0, 0, 70)
+        statsFrame.Position = UDim2.new(0.02, 0, 0, yOffset)
+        statsFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+        statsFrame.Parent = resultFrame
+        
+        local statsText = Instance.new("TextLabel")
+        statsText.Text = string.format(
+            "📊 MODEL STATISTICS\n\nParts: %d  |  Meshes: %d\nTextures: %d  |  Sounds: %d\nScripts: %d",
+            parts, meshes, textures, sounds, scripts
+        )
+        statsText.Size = UDim2.new(0.98, 0, 0.9, 0)
+        statsText.Position = UDim2.new(0.01, 0, 0.05, 0)
+        statsText.BackgroundTransparency = 1
+        statsText.TextColor3 = Color3.fromRGB(255, 255, 200)
+        statsText.Font = Enum.Font.GothamBold
+        statsText.TextWrapped = true
+        statsText.Parent = statsFrame
+        
+        yOffset = yOffset + 80
+        
+        -- السكربتات (الأهم)
+        if #analysis.Scripts > 0 then
+            local scriptsTitle = Instance.new("TextLabel")
+            scriptsTitle.Text = "💻 SCRIPTS FOUND: " .. #analysis.Scripts
+            scriptsTitle.Size = UDim2.new(0.96, 0, 0, 30)
+            scriptsTitle.Position = UDim2.new(0.02, 0, 0, yOffset)
+            scriptsTitle.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
+            scriptsTitle.TextColor3 = Color3.new(1, 1, 1)
+            scriptsTitle.Font = Enum.Font.GothamBold
+            scriptsTitle.Parent = resultFrame
             
-        elseif tabIndex == 2 then -- الروابط
-            -- رابط النموذج
-            if collectedData.Model.AssetId and collectedData.Model.AssetId ~= "" then
-                local linkText = Instance.new("TextLabel")
-                linkText.Text = "🔗 رابط النموذج:\nhttps://assetdelivery.roblox.com/v1/asset/?id=" .. collectedData.Model.AssetId
-                linkText.TextColor3 = Color3.fromRGB(150, 200, 255)
-                linkText.TextSize = 11
-                linkText.BackgroundTransparency = 1
-                linkText.Size = UDim2.new(0.96, 0, 0, 40)
-                linkText.Position = UDim2.new(0.02, 0, 0, yOffset)
-                linkText.TextWrapped = true
-                linkText.TextXAlignment = Enum.TextXAlignment.Left
-                linkText.Parent = contentFrame
-                
-                local copyBtn = Instance.new("TextButton")
-                copyBtn.Text = "📋 نسخ"
-                copyBtn.TextSize = 10
-                copyBtn.Size = UDim2.new(0.2, 0, 0.5, 0)
-                copyBtn.Position = UDim2.new(0.75, 0, 0.25, 0)
-                copyBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-                copyBtn.Parent = linkText
-                
-                copyBtn.MouseButton1Click:Connect(function()
-                    setclipboard("https://assetdelivery.roblox.com/v1/asset/?id=" .. collectedData.Model.AssetId)
-                    copyBtn.Text = "✅ تم!"
-                    task.wait(1)
-                    copyBtn.Text = "📋 نسخ"
-                end)
-                
-                yOffset += 50
-            end
+            yOffset = yOffset + 40
             
-        elseif tabIndex == 3 then -- السكربتات
-            if #collectedData.Scripts == 0 then
-                local noScripts = Instance.new("TextLabel")
-                noScripts.Text = "📭 لا توجد سكربتات في هذا النموذج"
-                noScripts.TextColor3 = Color3.fromRGB(255, 150, 150)
-                noScripts.TextSize = 14
-                noScripts.BackgroundTransparency = 1
-                noScripts.Size = UDim2.new(1, 0, 0.1, 0)
-                noScripts.Position = UDim2.new(0, 0, 0.3, 0)
-                noScripts.Parent = contentFrame
-                return
-            end
-            
-            for i, script in ipairs(collectedData.Scripts) do
+            for i, script in ipairs(analysis.Scripts) do
                 local scriptFrame = Instance.new("Frame")
-                scriptFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-                scriptFrame.Size = UDim2.new(0.96, 0, 0, 80)
+                scriptFrame.Size = UDim2.new(0.96, 0, 0, 90)
                 scriptFrame.Position = UDim2.new(0.02, 0, 0, yOffset)
-                scriptFrame.Parent = contentFrame
+                scriptFrame.BackgroundColor3 = Color3.fromRGB(60, 40, 40)
+                scriptFrame.Parent = resultFrame
+                
+                local scriptName = Instance.new("TextLabel")
+                scriptName.Text = script.Name .. " [" .. script.Type .. "]"
+                scriptName.Size = UDim2.new(0.7, 0, 0.3, 0)
+                scriptName.Position = UDim2.new(0.02, 0, 0.05, 0)
+                scriptName.BackgroundTransparency = 1
+                scriptName.TextColor3 = Color3.fromRGB(255, 200, 200)
+                scriptName.Font = Enum.Font.GothamBold
+                scriptName.TextXAlignment = Enum.TextXAlignment.Left
+                scriptName.Parent = scriptFrame
                 
                 local scriptInfo = Instance.new("TextLabel")
                 scriptInfo.Text = string.format(
-                    "💻 %s [%s]\n📊 %d سطر | ⚡ %s",
-                    script.Name,
-                    script.Type,
-                    script.LineCount,
-                    script.Disabled and "معطل" : "نشط"
+                    "Lines: %d | Size: %d chars\nDisabled: %s\nLoadstring: %s | HttpGet: %s",
+                    script.LineCount or 0,
+                    script.SourceLength,
+                    script.Disabled and "Yes" or "No",
+                    script.HasLoadstring and "Yes" or "No",
+                    script.HasHttpGet and "Yes" or "No"
                 )
-                scriptInfo.TextColor3 = Color3.fromRGB(150, 255, 150)
-                scriptInfo.TextSize = 11
+                scriptInfo.Size = UDim2.new(0.7, 0, 0.5, 0)
+                scriptInfo.Position = UDim2.new(0.02, 0, 0.4, 0)
                 scriptInfo.BackgroundTransparency = 1
-                scriptInfo.Size = UDim2.new(0.7, 0, 0.6, 0)
-                scriptInfo.Position = UDim2.new(0.02, 0, 0.05, 0)
+                scriptInfo.TextColor3 = Color3.fromRGB(220, 220, 220)
+                scriptInfo.Font = Enum.Font.Gotham
                 scriptInfo.TextWrapped = true
                 scriptInfo.TextXAlignment = Enum.TextXAlignment.Left
                 scriptInfo.Parent = scriptFrame
                 
+                -- زر نسخ الكود
                 local copyBtn = Instance.new("TextButton")
-                copyBtn.Text = "📋 نسخ الكود"
-                copyBtn.TextSize = 10
-                copyBtn.Size = UDim2.new(0.25, 0, 0.4, 0)
-                copyBtn.Position = UDim2.new(0.73, 0, 0.3, 0)
-                copyBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
+                copyBtn.Text = "📋 Copy"
+                copyBtn.Size = UDim2.new(0.25, 0, 0.3, 0)
+                copyBtn.Position = UDim2.new(0.73, 0, 0.35, 0)
+                copyBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+                copyBtn.TextColor3 = Color3.new(1, 1, 1)
+                copyBtn.Font = Enum.Font.GothamBold
                 copyBtn.Parent = scriptFrame
                 
                 copyBtn.MouseButton1Click:Connect(function()
-                    setclipboard(script.Content)
-                    copyBtn.Text = "✅ تم!"
-                    task.wait(1)
-                    copyBtn.Text = "📋 نسخ الكود"
+                    if script.Content and script.Content ~= "N/A" then
+                        setclipboard(script.Content)
+                        copyBtn.Text = "✅ Copied!"
+                        wait(1)
+                        copyBtn.Text = "📋 Copy"
+                    end
                 end)
                 
-                yOffset += 85
+                yOffset = yOffset + 100
             end
-            
-        elseif tabIndex == 4 then -- البحث العميق
-            if #scanLogs == 0 then
-                local scanPrompt = Instance.new("TextLabel")
-                scanPrompt.Text = "🚀 البحث العميق\n\nيقوم بمسح شامل للنموذج بحثاً عن:\n• سكربتات مخفية\n• روابط خارجية\n• مخاطر أمنية\n• محتوى مشبوه\n\nاضغط على زر SCAN_NOW للبدء"
-                scanPrompt.TextColor3 = Color3.fromRGB(200, 200, 255)
-                scanPrompt.TextSize = 13
-                scanPrompt.BackgroundTransparency = 1
-                scanPrompt.Size = UDim2.new(0.96, 0, 0, 150)
-                scanPrompt.Position = UDim2.new(0.02, 0, 0.2, 0)
-                scanPrompt.TextWrapped = true
-                scanPrompt.Parent = contentFrame
-            else
-                -- عرض سجل المسح
-                local logText = table.concat(scanLogs, "\n")
-                local logLabel = Instance.new("TextLabel")
-                logLabel.Text = logText
-                logLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-                logLabel.TextSize = 11
-                logLabel.BackgroundTransparency = 1
-                logLabel.Size = UDim2.new(0.96, 0, 0, 300)
-                logLabel.Position = UDim2.new(0.02, 0, 0, yOffset)
-                logLabel.TextWrapped = true
-                logLabel.TextXAlignment = Enum.TextXAlignment.Left
-                logLabel.Parent = contentFrame
-                yOffset += 310
-            end
-            
-        elseif tabIndex == 5 then -- النسخ
-            local copyOptions = {
-                {"📋 نسخ كل Asset IDs", function()
-                    local allIds = {"=== Dragon Chalice Asset IDs ==="}
-                    table.insert(allIds, "النموذج: " .. (collectedData.Model.AssetId or "N/A"))
-                    
-                    for _, mesh in ipairs(collectedData.Meshes) do
-                        table.insert(allIds, "Mesh - " .. mesh.Name .. ": " .. mesh.AssetId)
-                    end
-                    
-                    setclipboard(table.concat(allIds, "\n"))
-                end},
-                
-                {"📊 نسخ المعلومات", function()
-                    local info = {
-                        "=== معلومات Dragon Chalice ===",
-                        "الاسم: " .. collectedData.Model.Name,
-                        "المسار: ReplicatedStorage.Assets.Models.Chalices",
-                        "Meshes: " .. #collectedData.Meshes,
-                        "Textures: " .. #collectedData.Textures,
-                        "Scripts: " .. #collectedData.Scripts
-                    }
-                    setclipboard(table.concat(info, "\n"))
-                end},
-                
-                {"💻 نسخ كل السكربتات", function()
-                    local allScripts = {"=== سكربتات Dragon Chalice ==="}
-                    
-                    for _, script in ipairs(collectedData.Scripts) do
-                        table.insert(allScripts, "\n=== " .. script.Name .. " ===")
-                        table.insert(allScripts, script.Content)
-                    end
-                    
-                    setclipboard(table.concat(allScripts, "\n"))
-                end}
-            }
-            
-            for i, option in ipairs(copyOptions) do
-                local copyBtn = Instance.new("TextButton")
-                copyBtn.Text = option[1]
-                copyBtn.TextSize = 12
-                copyBtn.Font = Enum.Font.Gotham
-                copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                copyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-                copyBtn.Size = UDim2.new(0.92, 0, 0, 35)
-                copyBtn.Position = UDim2.new(0.04, 0, 0, yOffset)
-                copyBtn.Parent = contentFrame
-                
-                copyBtn.MouseButton1Click:Connect(option[2])
-                
-                yOffset += 40
-            end
-        end
-        
-        contentFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 20)
-    end
-    
-    -- تعريف الأحداث بعد إنشاء الدالة
-    -- زر المسح الأساسي
-    scanButton.MouseButton1Click:Connect(function()
-        scanButton.Text = "⏳ جاري المسح..."
-        scanButton.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
-        
-        local model, message = findDragonChalice()
-        
-        if model then
-            collectedData = collectAllAssetIds(model)
-            scanButton.Text = "✅ تم المسح!"
-            scanButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-            
-            -- إضافة رسالة نجاح
-            local successMsg = Instance.new("TextLabel")
-            successMsg.Text = "✅ " .. message .. "\n📊 تم جمع بيانات " .. 
-                (#collectedData.Meshes + #collectedData.Textures + #collectedData.Scripts) .. " أصل"
-            successMsg.TextColor3 = Color3.fromRGB(100, 255, 100)
-            successMsg.TextSize = 12
-            successMsg.BackgroundTransparency = 1
-            successMsg.Size = UDim2.new(0.96, 0, 0, 40)
-            successMsg.Position = UDim2.new(0.02, 0, 0.02, 0)
-            successMsg.TextWrapped = true
-            successMsg.Parent = contentFrame
-            
-            updateContent(currentTab)
         else
-            scanButton.Text = "❌ فشل المسح"
-            scanButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+            local noScripts = Instance.new("TextLabel")
+            noScripts.Text = "📭 NO SCRIPTS FOUND IN THIS MODEL"
+            noScripts.Size = UDim2.new(0.96, 0, 0, 40)
+            noScripts.Position = UDim2.new(0.02, 0, 0, yOffset)
+            noScripts.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            noScripts.TextColor3 = Color3.new(1, 1, 1)
+            noScripts.Font = Enum.Font.Gotham
+            noScripts.Parent = resultFrame
             
-            local errorMsg = Instance.new("TextLabel")
-            errorMsg.Text = message
-            errorMsg.TextColor3 = Color3.fromRGB(255, 100, 100)
-            errorMsg.TextSize = 12
-            errorMsg.BackgroundTransparency = 1
-            errorMsg.Size = UDim2.new(0.96, 0, 0, 60)
-            errorMsg.Position = UDim2.new(0.02, 0, 0.3, 0)
-            errorMsg.TextWrapped = true
-            errorMsg.Parent = contentFrame
-        end
-    end)
-    
-    -- زر البحث العميق
-    deepScanButton.MouseButton1Click:Connect(function()
-        if isScanning then
-            return
+            yOffset = yOffset + 50
         end
         
-        if not collectedData then
-            deepScanButton.Text = "❌ امسح أولاً"
-            deepScanButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-            task.wait(1)
-            deepScanButton.Text = "🚀 SCAN_NOW"
-            deepScanButton.BackgroundColor3 = Color3.fromRGB(215, 80, 0)
-            return
-        end
-        
-        deepScanButton.Text = "🌀 جاري البحث..."
-        deepScanButton.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
-        
-        local model = findDragonChalice()
-        if model then
-            currentTab = 4
-            updateContent(4)
+        -- Asset Links
+        if analysis.BasicInfo.AssetId and analysis.BasicInfo.AssetId ~= "N/A" then
+            local linksFrame = Instance.new("Frame")
+            linksFrame.Size = UDim2.new(0.96, 0, 0, 60)
+            linksFrame.Position = UDim2.new(0.02, 0, 0, yOffset)
+            linksFrame.BackgroundColor3 = Color3.fromRGB(40, 60, 80)
+            linksFrame.Parent = resultFrame
             
-            task.spawn(function()
-                local scanResults, report = deepScanNow(model)
+            local linksText = Instance.new("TextLabel")
+            linksText.Text = "🔗 ASSET LINKS\nAsset ID: " .. analysis.BasicInfo.AssetId
+            linksText.Size = UDim2.new(0.7, 0, 1, 0)
+            linksText.Position = UDim2.new(0.02, 0, 0, 0)
+            linksText.BackgroundTransparency = 1
+            linksText.TextColor3 = Color3.fromRGB(200, 220, 255)
+            linksText.Font = Enum.Font.Gotham
+            linksText.TextWrapped = true
+            linksText.TextXAlignment = Enum.TextXAlignment.Left
+            linksText.Parent = linksFrame
+            
+            local copyLinkBtn = Instance.new("TextButton")
+            copyLinkBtn.Text = "📋 Copy Link"
+            copyLinkBtn.Size = UDim2.new(0.25, 0, 0.6, 0)
+            copyLinkBtn.Position = UDim2.new(0.73, 0, 0.2, 0)
+            copyLinkBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
+            copyLinkBtn.TextColor3 = Color3.new(1, 1, 1)
+            copyLinkBtn.Font = Enum.Font.GothamBold
+            copyLinkBtn.Parent = linksFrame
+            
+            copyLinkBtn.MouseButton1Click:Connect(function()
+                local links = GET_ASSET_LINKS(analysis.BasicInfo.AssetId)
+                if links then
+                    setclipboard(links.AssetDelivery)
+                    copyLinkBtn.Text = "✅ Copied!"
+                    wait(1)
+                    copyLinkBtn.Text = "📋 Copy Link"
+                end
+            end)
+            
+            yOffset = yOffset + 70
+        end
+        
+        resultFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 20)
+        
+        -- تحضير نص النسخ
+        allInfoText = string.format(
+            "🐉 Dragon (East)-Dragon (East) Analysis\n%s\n\n📊 Statistics:\n• Parts: %d\n• Meshes: %d\n• Textures: %d\n• Sounds: %d\n• Scripts: %d\n\n📦 Asset ID: %s\n\n",
+            os.date("%Y-%m-%d %H:%M:%S"),
+            parts, meshes, textures, sounds, scripts,
+            analysis.BasicInfo.AssetId
+        )
+        
+        -- إضافة معلومات السكربتات
+        if #analysis.Scripts > 0 then
+            allInfoText = allInfoText .. "💻 SCRIPTS:\n"
+            for i, script in ipairs(analysis.Scripts) do
+                allInfoText = allInfoText .. string.format(
+                    "\n[%d] %s (%s)\nLines: %d | Size: %d chars\nDisabled: %s\n",
+                    i, script.Name, script.Type,
+                    script.LineCount or 0, script.SourceLength,
+                    script.Disabled and "Yes" or "No"
+                )
                 
-                deepScanButton.Text = "✅ اكتمل!"
-                deepScanButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-                
-                -- إضافة التقرير للواجهة
-                if report then
-                    table.insert(scanLogs, "\n" .. table.concat(report, "\n"))
-                    updateContent(4)
+                if script.HasLoadstring then
+                    allInfoText = allInfoText .. "⚠️ Contains loadstring\n"
+                end
+                if script.HasHttpGet then
+                    allInfoText = allInfoText .. "⚠️ Contains HttpGet\n"
                 end
                 
-                task.wait(2)
-                deepScanButton.Text = "🚀 SCAN_NOW"
-                deepScanButton.BackgroundColor3 = Color3.fromRGB(215, 80, 0)
-            end)
+                allInfoText = allInfoText .. string.rep("-", 30) .. "\n"
+            end
+        end
+        
+        copyAllBtn.Visible = true
+    end
+    
+    -- حدث زر التحليل
+    analyzeBtn.MouseButton1Click:Connect(function()
+        analyzeBtn.Text = "🔍 SEARCHING..."
+        analyzeBtn.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+        statusLabel.Text = "Looking for Dragon (East)-Dragon (East)..."
+        
+        local model = FIND_DRAGON_MODEL()
+        
+        if model then
+            analyzeBtn.Text = "📊 ANALYZING..."
+            statusLabel.Text = "Model found! Analyzing contents..."
+            
+            local analysis, parts, meshes, textures, sounds, scripts = ANALYZE_DRAGON_MODEL(model)
+            currentAnalysis = analysis
+            
+            DISPLAY_RESULTS(analysis, parts, meshes, textures, sounds, scripts)
+            
+            analyzeBtn.Text = "✅ ANALYSIS COMPLETE"
+            analyzeBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+            statusLabel.Text = string.format(
+                "Found: %d Parts, %d Meshes, %d Textures, %d Sounds, %d Scripts",
+                parts, meshes, textures, sounds, scripts
+            )
+        else
+            analyzeBtn.Text = "❌ NOT FOUND"
+            analyzeBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+            statusLabel.Text = "Dragon (East)-Dragon (East) not found at specified path!"
+            
+            -- إظهار رسالة الخطأ
+            resultFrame:ClearAllChildren()
+            
+            local errorMsg = Instance.new("TextLabel")
+            errorMsg.Text = "❌ Dragon (East)-Dragon (East) NOT FOUND!\n\nPlease check:\n1. Path exists: ReplicatedStorage.Assets.Models.Chalices\n2. Model name is exact: Dragon (East)-Dragon (East)\n3. You're in the right game"
+            errorMsg.Size = UDim2.new(0.9, 0, 0.8, 0)
+            errorMsg.Position = UDim2.new(0.05, 0, 0.1, 0)
+            errorMsg.BackgroundTransparency = 1
+            errorMsg.TextColor3 = Color3.fromRGB(255, 100, 100)
+            errorMsg.Font = Enum.Font.GothamBold
+            errorMsg.TextWrapped = true
+            errorMsg.Parent = resultFrame
+            
+            copyAllBtn.Visible = false
         end
     end)
     
-    -- تهيئة المحتوى
-    updateContent(1)
+    -- حدث نسخ الكل
+    copyAllBtn.MouseButton1Click:Connect(function()
+        if allInfoText and allInfoText ~= "" then
+            setclipboard(allInfoText)
+            copyAllBtn.Text = "✅ COPIED!"
+            statusLabel.Text = "All information copied to clipboard!"
+            
+            wait(2)
+            copyAllBtn.Text = "📋 COPY ALL INFO"
+        end
+    end)
     
     return screenGui
 end
 
--- ============== بدء التشغيل ==============
-print("========================================")
-print("   Dragon Chalice Deep Scanner v3.0     ")
-print("        Mobile Professional Edition     ")
-print("========================================")
+-- ============================================
+-- 🚀 START
+-- ============================================
 
--- إنشاء الواجهة
-local ui = createMobileUI()
+CREATE_MOBILE_INTERFACE()
 
-print("✅ تم تحميل الماسح الضوئي بنجاح!")
-print("🔍 اضغط على 'مسح Dragon Chalice' للبدء")
-print("🚀 استخدم 'SCAN_NOW' للبحث العميق")
+print("\n" .. string.rep("=", 60))
+print("🐉 Dragon (East)-Dragon (East) Analyzer v1.0")
+print("📱 Mobile-Compatible for Delta Roblox")
+print("🎯 Target: ReplicatedStorage.Assets.Models.Chalices")
+print(string.rep("=", 60))
+print("\n✅ Interface loaded! Press 'FIND & ANALYZE' to start")
