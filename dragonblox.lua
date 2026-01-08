@@ -1,14 +1,18 @@
--- Dragon Fruit Assembler (يجمع قطع الفاكهة)
+-- Dragon Tool Explorer (يشوف محتويات الـ Tool)
+local toolPath = "ReplicatedStorage.Assets.Models.Chalices.Dragon (East)-Dragon (East)"
+
+-- إنشاء واجهة
 local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ToolExplorer"
 screenGui.Parent = game.CoreGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0.7, 0, 0.8, 0)
-frame.Position = UDim2.new(0.15, 0, 0.1, 0)
+frame.Size = UDim2.new(0.8, 0, 0.7, 0)
+frame.Position = UDim2.new(0.1, 0, 0.15, 0)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
 frame.Parent = screenGui
 
--- خاصية السحب
+-- سحب النافذة
 local isDragging = false
 local dragStart = Vector2.new(0, 0)
 local frameStart = Vector2.new(0, 0)
@@ -27,8 +31,8 @@ game:GetService("UserInputService").InputChanged:Connect(function(input)
         local delta = currentPos - dragStart
         local viewportSize = workspace.CurrentCamera.ViewportSize
         local deltaScale = Vector2.new(delta.X / viewportSize.X, delta.Y / viewportSize.Y)
-        local newX = math.clamp(frameStart.X + deltaScale.X, 0, 0.3)
-        local newY = math.clamp(frameStart.Y + deltaScale.Y, 0, 0.2)
+        local newX = math.clamp(frameStart.X + deltaScale.X, 0, 0.2)
+        local newY = math.clamp(frameStart.Y + deltaScale.Y, 0, 0.3)
         frame.Position = UDim2.new(newX, 0, newY, 0)
     end
 end)
@@ -41,10 +45,10 @@ end)
 
 -- العنوان
 local title = Instance.new("TextLabel")
-title.Text = "🐉 Dragon Fruit Assembler"
+title.Text = "🔍 Dragon Tool Explorer"
 title.Size = UDim2.new(1, 0, 0.1, 0)
 title.Font = Enum.Font.SourceSansBold
-title.TextSize = 20
+title.TextSize = 22
 title.TextColor3 = Color3.fromRGB(255, 100, 100)
 title.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 title.Parent = frame
@@ -63,143 +67,110 @@ closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- قائمة المسارات
-local paths = {
-    {name = "🎮 بيانات الفاكهة", path = "ReplicatedStorage.Modules.Asset.ItemData.FruitAccessories.Dragon (East)-Dragon (East)"},
-    {name = "🔄 نسخة التحول", path = "ReplicatedStorage.Modules.SkinUtil.SkinnedRigs.Transformations.Dragon (East)-Dragon(East)"},
-    {name = "🍷 الكوب الأحمر", path = "ReplicatedStorage.Modules.SkinUtil.SkinnedRigs.Chalices.Dragon(East)-Dragon (East)"},
-    {name = "🎨 مظهر الفاكهة", path = "ReplicatedStorage.Modules.SkinUtil.FruitSkins.Dragon(East)-Dragon (East)"},
-    {name = "🎬 نسخة العرض", path = "Workspace.BaristaCutsceneDummy_Stored.Chalices.Dragon(East)-Dragon (East)"},
-    {name = "📦 الموديل الأساسي", path = "ReplicatedStorage.Assets.Models.Chalices.Dragon (East)-Dragon (East)"}
-}
-
-local resultsFrame = Instance.new("ScrollingFrame")
-resultsFrame.Size = UDim2.new(0.95, 0, 0.6, 0)
-resultsFrame.Position = UDim2.new(0.025, 0, 0.15, 0)
-resultsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-resultsFrame.Parent = frame
-
-local function checkPath(fullPath)
-    local parts = string.split(fullPath, ".")
+-- البحث عن الـ Tool
+local function findTool()
+    local parts = string.split(toolPath, ".")
     local current = game
     
     for _, part in ipairs(parts) do
         current = current:FindFirstChild(part)
-        if not current then
-            return false, nil
-        end
+        if not current then return nil end
     end
     
-    return true, current
+    return current
 end
 
--- زر فحص كل المسارات
-local scanBtn = Instance.new("TextButton")
-scanBtn.Text = "🔍 افحص جميع المسارات"
-scanBtn.Size = UDim2.new(0.95, 0, 0.08, 0)
-scanBtn.Position = UDim2.new(0.025, 0, 0.77, 0)
-scanBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
-scanBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-scanBtn.Font = Enum.Font.SourceSansBold
-scanBtn.Parent = frame
+-- منطقة العرض
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(0.95, 0, 0.7, 0)
+scrollFrame.Position = UDim2.new(0.025, 0, 0.15, 0)
+scrollFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+scrollFrame.Parent = frame
 
--- زر إنشاء فاكهة
-local createBtn = Instance.new("TextButton")
-createBtn.Text = "✨ أنشئ فاكهة كاملة"
-createBtn.Size = UDim2.new(0.95, 0, 0.08, 0)
-createBtn.Position = UDim2.new(0.025, 0, 0.87, 0)
-createBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 150)
-createBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-createBtn.Font = Enum.Font.SourceSansBold
-createBtn.Parent = frame
+-- زر استكشاف
+local exploreBtn = Instance.new("TextButton")
+exploreBtn.Text = "🔍 استكشف محتويات الـ Tool"
+exploreBtn.Size = UDim2.new(0.95, 0, 0.08, 0)
+exploreBtn.Position = UDim2.new(0.025, 0, 0.87, 0)
+exploreBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+exploreBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+exploreBtn.Font = Enum.Font.SourceSansBold
+exploreBtn.Parent = frame
 
-scanBtn.MouseButton1Click:Connect(function()
-    resultsFrame:ClearAllChildren()
+exploreBtn.MouseButton1Click:Connect(function()
+    scrollFrame:ClearAllChildren()
     
-    local foundCount = 0
-    local foundObjects = {}
-    
-    for i, pathData in ipairs(paths) do
-        local exists, obj = checkPath(pathData.path)
-        
+    local tool = findTool()
+    if not tool then
         local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, 0, 0, 30)
-        label.Position = UDim2.new(0, 0, 0, (i-1)*35)
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        label.Parent = resultsFrame
-        
-        if exists then
-            foundCount = foundCount + 1
-            label.Text = "✅ " .. pathData.name
-            label.TextColor3 = Color3.fromRGB(100, 255, 100)
-            table.insert(foundObjects, obj)
-        else
-            label.Text = "❌ " .. pathData.name
-            label.TextColor3 = Color3.fromRGB(255, 100, 100)
-        end
-    end
-    
-    resultsFrame.CanvasSize = UDim2.new(0, 0, 0, #paths * 35)
-end)
-
-createBtn.MouseButton1Click:Connect(function()
-    -- محاولة إنشاء فاكهة من البيانات
-    local player = game.Players.LocalPlayer
-    local backpack = player:FindFirstChild("Backpack")
-    
-    if not backpack then
-        print("❌ ما في حقيبة")
+        label.Text = "❌ ما لقيت الـ Tool"
+        label.Size = UDim2.new(1, 0, 0, 40)
+        label.TextColor3 = Color3.fromRGB(255, 100, 100)
+        label.Parent = scrollFrame
         return
     end
     
-    -- محاولة الحصول على الموديل الأساسي
-    local modelPath = "ReplicatedStorage.Assets.Models.Chalices.Dragon (East)-Dragon (East)"
-    local parts = string.split(modelPath, ".")
-    local current = game
+    -- عرض معلومات الـ Tool
+    local toolInfo = Instance.new("TextLabel")
+    toolInfo.Text = "📦 Tool: " .. tool.Name
+    toolInfo.Size = UDim2.new(1, 0, 0, 30)
+    toolInfo.TextColor3 = Color3.fromRGB(100, 255, 100)
+    toolInfo.Parent = scrollFrame
     
-    for _, part in ipairs(parts) do
-        current = current:FindFirstChild(part)
-        if not current then break end
+    local classInfo = Instance.new("TextLabel")
+    classInfo.Text = "🏷️ النوع: " .. tool.ClassName
+    classInfo.Size = UDim2.new(1, 0, 0, 30)
+    classInfo.Position = UDim2.new(0, 0, 0, 35)
+    classInfo.TextColor3 = Color3.fromRGB(200, 200, 100)
+    classInfo.Parent = scrollFrame
+    
+    -- عرض محتويات الـ Tool (الـ Assets)
+    local yOffset = 70
+    local assetCount = 0
+    
+    for _, child in pairs(tool:GetChildren()) do
+        assetCount = assetCount + 1
+        
+        local assetLabel = Instance.new("TextLabel")
+        assetLabel.Text = "🔹 " .. assetCount .. ". " .. child.Name .. " (" .. child.ClassName .. ")"
+        assetLabel.Size = UDim2.new(1, 0, 0, 30)
+        assetLabel.Position = UDim2.new(0, 0, 0, yOffset)
+        assetLabel.TextColor3 = Color3.fromRGB(150, 150, 255)
+        assetLabel.TextXAlignment = Enum.TextXAlignment.Left
+        assetLabel.Parent = scrollFrame
+        
+        yOffset = yOffset + 35
+        
+        -- إذا كان الـ child جواه أطفال كمان
+        if #child:GetChildren() > 0 then
+            for _, subChild in pairs(child:GetChildren()) do
+                local subLabel = Instance.new("TextLabel")
+                subLabel.Text = "   └─ " .. subChild.Name .. " (" .. subChild.ClassName .. ")"
+                subLabel.Size = UDim2.new(1, 0, 0, 25)
+                subLabel.Position = UDim2.new(0, 0, 0, yOffset)
+                subLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+                subLabel.TextXAlignment = Enum.TextXAlignment.Left
+                subLabel.Parent = scrollFrame
+                
+                yOffset = yOffset + 30
+            end
+        end
     end
     
-    if current and current:IsA("Model") then
-        -- إنشاء Tool جديد
-        local newTool = Instance.new("Tool")
-        newTool.Name = "Dragon_Fruit_Final"
-        newTool.ToolTip = "Dragon Fruit (East)"
-        
-        -- نسخ الموديل داخل الـ Tool
-        local modelClone = current:Clone()
-        modelClone.Parent = newTool
-        
-        -- إضافة خصائص التغذية
-        local nutrition = Instance.new("NumberValue")
-        nutrition.Name = "Nutrition"
-        nutrition.Value = 100
-        nutrition.Parent = newTool
-        
-        local health = Instance.new("NumberValue")
-        health.Name = "HealthBonus"
-        health.Value = 50
-        health.Parent = newTool
-        
-        -- إضافة Script للأكل
-        local eatScript = Instance.new("Script")
-        eatScript.Name = "EatScript"
-        eatScript.Source = [[
-            tool = script.Parent
-            
-            tool.Activated:Connect(function()
-                local humanoid = game.Players.LocalPlayer.Character.Humanoid
-                humanoid.Health = humanoid.Health + tool.HealthBonus.Value
-                tool:Destroy()
-            end)
-        ]]
-        eatScript.Parent = newTool
-        
-        newTool.Parent = backpack
-        print("✅ فاكهة من صنعي في حقيبتك!")
-    else
-        print("❌ ما أقدرش أنشئ الفاكهة")
-    end
+    local totalLabel = Instance.new("TextLabel")
+    totalLabel.Text = "📊 إجمالي المحتويات: " .. assetCount .. " عنصر"
+    totalLabel.Size = UDim2.new(1, 0, 0, 30)
+    totalLabel.Position = UDim2.new(0, 0, 0, yOffset)
+    totalLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+    totalLabel.Parent = scrollFrame
+    
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 40)
 end)
+
+-- تحميل أولي
+local tool = findTool()
+if tool then
+    title.Text = title.Text .. " ✅"
+else
+    title.Text = title.Text .. " ❌"
+end
