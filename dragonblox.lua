@@ -1,138 +1,218 @@
--- 🐉 Dragon Tool Controller للهاتف
--- زر صغير في الشاشة يتحكم في Dragon
-
+-- 🐉 Dragon Controller - زر متحرك للهاتف
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- ابحث عن الـ Dragon Tool في المسار
-local dragonPath = game.Workspace.Characters.BLAACKASTA
-local dragonTool = dragonPath:FindFirstChild("Dragon-Dragon")
+-- ابحث عن الـ Dragon
+local dragon = game.Workspace.Characters.BLAACKASTA:FindFirstChild("Dragon-Dragon")
 
-if dragonTool then
-    print("✅ وجدت Dragon Tool!")
-    
-    -- إنشاء زر صغير في الشاشة
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "DragonController"
-    screenGui.Parent = player.PlayerGui
-    
-    -- زر التحكم الرئيسي
-    local controlButton = Instance.new("TextButton")
-    controlButton.Name = "DragonBtn"
-    controlButton.Text = "🐉"
-    controlButton.TextSize = 24
-    controlButton.Font = Enum.Font.GothamBold
-    controlButton.TextColor3 = Color3.new(1, 1, 1)
-    controlButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    
-    -- حجم وموقع صغير للهاتف
-    controlButton.Size = UDim2.new(0.12, 0, 0.08, 0) -- زر صغير
-    controlButton.Position = UDim2.new(0.44, 0, 0.8, 0) -- أسفل الشاشة
-    
-    controlButton.Parent = screenGui
-    
-    -- متغيرات التحكم
-    local isActivated = false
-    local originalPosition = dragonTool.Position
-    
-    -- دالة تفعيل/إلغاء التفعيل
-    local function toggleDragon()
-        if isActivated then
-            -- إلغاء التفعيل
-            isActivated = false
-            controlButton.Text = "🐉"
-            controlButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-            
-            -- إرجاع للأصل (إذا أردت)
-            -- dragonTool.Position = originalPosition
-            
-            print("🔴 Dragon معطل")
-        else
-            -- تفعيل
-            isActivated = true
-            controlButton.Text = "🔥"
-            controlButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            
-            -- حرك الـ Dragon
-            dragonTool.Position = dragonTool.Position + Vector3.new(0, 5, 0)
-            
-            print("🟢 Dragon مفعل")
-            
-            -- محاولة تنفيذ الأمر
-            pcall(function()
-                -- جرب تنفيذ الأمر
-                _G.INCREASE_RESOURCE('TOOLS', 112, 1)
-                print("✅ تم تنفيذ الأمر")
-            end)
+if not dragon then
+    -- إذا مش موجود، دور في كل الـ Workspace
+    for _, obj in pairs(game.Workspace:GetDescendants()) do
+        if obj.Name == "Dragon-Dragon" and obj:IsA("Tool") then
+            dragon = obj
+            break
         end
     end
+end
+
+-- شاشة التحكم
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DragController"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- الإطار الرئيسي (متحرك)
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "ControlFrame"
+mainFrame.Size = UDim2.new(0.25, 0, 0.15, 0) -- إطار صغير
+mainFrame.Position = UDim2.new(0.375, 0, 0.425, 0) -- في نص الشاشة
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+mainFrame.BackgroundTransparency = 0.3
+mainFrame.Active = true -- عشان نقدر نحركه
+mainFrame.Draggable = true -- مهم! هذا اللي يخليه متحرك
+mainFrame.Parent = screenGui
+
+-- عنوان الإطار
+local title = Instance.new("TextLabel")
+title.Text = "🐉 Dragon"
+title.Size = UDim2.new(1, 0, 0.3, 0)
+title.BackgroundColor3 = Color3.fromRGB(80, 40, 120)
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+
+-- منطقة الأزرار
+local buttonFrame = Instance.new("Frame")
+buttonFrame.Size = UDim2.new(1, 0, 0.7, 0)
+buttonFrame.Position = UDim2.new(0, 0, 0.3, 0)
+buttonFrame.BackgroundTransparency = 1
+buttonFrame.Parent = mainFrame
+
+-- صف الأزرار الأول
+local row1 = Instance.new("Frame")
+row1.Size = UDim2.new(1, 0, 0.5, 0)
+row1.BackgroundTransparency = 1
+row1.Parent = buttonFrame
+
+-- زر التشغيل/الإيقاف
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "ToggleBtn"
+toggleBtn.Text = "🔴"
+toggleBtn.Size = UDim2.new(0.3, 0, 0.9, 0)
+toggleBtn.Position = UDim2.new(0.05, 0, 0.05, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 18
+toggleBtn.Parent = row1
+
+-- زر زيادة الموارد
+local resourceBtn = Instance.new("TextButton")
+resourceBtn.Text = "📈"
+resourceBtn.Size = UDim2.new(0.3, 0, 0.9, 0)
+resourceBtn.Position = UDim2.new(0.35, 0, 0.05, 0)
+resourceBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+resourceBtn.TextColor3 = Color3.new(1, 1, 1)
+resourceBtn.Font = Enum.Font.GothamBold
+resourceBtn.TextSize = 18
+resourceBtn.Parent = row1
+
+-- زر الإغلاق
+local closeBtn = Instance.new("TextButton")
+closeBtn.Text = "✗"
+closeBtn.Size = UDim2.new(0.3, 0, 0.9, 0)
+closeBtn.Position = UDim2.new(0.65, 0, 0.05, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 18
+closeBtn.Parent = row1
+
+-- صف الأزرار الثاني (للتحريك)
+local row2 = Instance.new("Frame")
+row2.Size = UDim2.new(1, 0, 0.5, 0)
+row2.Position = UDim2.new(0, 0, 0.5, 0)
+row2.BackgroundTransparency = 1
+row2.Parent = buttonFrame
+
+-- أزرار التحريك
+local upBtn = Instance.new("TextButton")
+upBtn.Text = "⬆️"
+upBtn.Size = UDim2.new(0.3, 0, 0.9, 0)
+upBtn.Position = UDim2.new(0.05, 0, 0.05, 0)
+upBtn.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
+upBtn.TextColor3 = Color3.new(1, 1, 1)
+upBtn.Font = Enum.Font.GothamBold
+upBtn.Parent = row2
+
+local downBtn = Instance.new("TextButton")
+downBtn.Text = "⬇️"
+downBtn.Size = UDim2.new(0.3, 0, 0.9, 0)
+downBtn.Position = UDim2.new(0.35, 0, 0.05, 0)
+downBtn.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
+downBtn.TextColor3 = Color3.new(1, 1, 1)
+downBtn.Font = Enum.Font.GothamBold
+downBtn.Parent = row2
+
+local teleBtn = Instance.new("TextButton")
+teleBtn.Text = "📍"
+teleBtn.Size = UDim2.new(0.3, 0, 0.9, 0)
+teleBtn.Position = UDim2.new(0.65, 0, 0.05, 0)
+teleBtn.BackgroundColor3 = Color3.fromRGB(200, 150, 50)
+teleBtn.TextColor3 = Color3.new(1, 1, 1)
+teleBtn.Font = Enum.Font.GothamBold
+teleBtn.Parent = row2
+
+-- حالة التنشيط
+local isActive = false
+local dragonFound = dragon ~= nil
+
+-- حدث زر التشغيل/الإيقاف
+toggleBtn.MouseButton1Click:Connect(function()
+    if not dragonFound then
+        print("❌ Dragon مش موجود!")
+        return
+    end
     
-    -- حدث الضغط على الزر
-    controlButton.MouseButton1Click:Connect(toggleDragon)
+    isActive = not isActive
     
-    -- زر إضافي للتحريك
-    local moveButton = Instance.new("TextButton")
-    moveButton.Name = "MoveBtn"
-    moveButton.Text = "↕️"
-    moveButton.TextSize = 18
-    moveButton.Font = Enum.Font.GothamBold
-    moveButton.TextColor3 = Color3.new(1, 1, 1)
-    moveButton.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
-    moveButton.Size = UDim2.new(0.1, 0, 0.06, 0)
-    moveButton.Position = UDim2.new(0.57, 0, 0.81, 0)
-    moveButton.Parent = screenGui
-    
-    -- دالة تحريك الـ Dragon
-    moveButton.MouseButton1Click:Connect(function()
-        dragonTool.Position = dragonTool.Position + Vector3.new(0, 2, 0)
-        print("⬆️ رفع Dragon")
-    end)
-    
-    -- زر إنزال
-    local downButton = Instance.new("TextButton")
-    downButton.Name = "DownBtn"
-    downButton.Text = "↧"
-    downButton.TextSize = 18
-    downButton.Font = Enum.Font.GothamBold
-    downButton.TextColor3 = Color3.new(1, 1, 1)
-    downButton.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
-    downButton.Size = UDim2.new(0.1, 0, 0.06, 0)
-    downButton.Position = UDim2.new(0.33, 0, 0.81, 0)
-    downButton.Parent = screenGui
-    
-    downButton.MouseButton1Click:Connect(function()
-        dragonTool.Position = dragonTool.Position + Vector3.new(0, -2, 0)
-        print("⬇️ إنزال Dragon")
-    end)
-    
-    -- معلومات صغيرة
-    local infoLabel = Instance.new("TextLabel")
-    infoLabel.Name = "InfoLabel"
-    infoLabel.Text = "Dragon Controller"
-    infoLabel.TextSize = 12
-    infoLabel.TextColor3 = Color3.new(1, 1, 1)
-    infoLabel.BackgroundTransparency = 1
-    infoLabel.Size = UDim2.new(0.2, 0, 0.04, 0)
-    infoLabel.Position = UDim2.new(0.4, 0, 0.88, 0)
-    infoLabel.Parent = screenGui
-    
-    print("🎮 أزرار التحكم جاهزة!")
-    print("🐉 اضغط على الزر للتحكم في Dragon")
-    
+    if isActive then
+        toggleBtn.Text = "🟢"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        
+        -- محاولة تنفيذ الأمر
+        pcall(function()
+            -- جرب تنفيذ الأمر INCREASE_RESOURCE
+            if _G.INCREASE_RESOURCE then
+                _G.INCREASE_RESOURCE('TOOLS', 112, 1)
+                print("✅ تم تنفيذ INCREASE_RESOURCE")
+            end
+            
+            -- أو أي تأثير آخر
+            dragon.Position = dragon.Position + Vector3.new(0, 3, 0)
+        end)
+        
+        print("🐉 Dragon مفعل!")
+    else
+        toggleBtn.Text = "🔴"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        print("🐉 Dragon معطل!")
+    end
+end)
+
+-- حدث زر الموارد
+resourceBtn.MouseButton1Click:Connect(function()
+    if dragonFound then
+        pcall(function()
+            if _G.INCREASE_RESOURCE then
+                _G.INCREASE_RESOURCE('TOOLS', 112, 1)
+                resourceBtn.Text = "✅"
+                
+                task.wait(0.5)
+                resourceBtn.Text = "📈"
+            end
+        end)
+    end
+end)
+
+-- حدث أزرار التحريك
+upBtn.MouseButton1Click:Connect(function()
+    if dragonFound then
+        dragon.Position = dragon.Position + Vector3.new(0, 2, 0)
+        print("⬆️ Dragon راح فوق")
+    end
+end)
+
+downBtn.MouseButton1Click:Connect(function()
+    if dragonFound then
+        dragon.Position = dragon.Position + Vector3.new(0, -2, 0)
+        print("⬇️ Dragon راح تحت")
+    end
+end)
+
+teleBtn.MouseButton1Click:Connect(function()
+    if dragonFound and player.Character then
+        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            dragon.Position = hrp.Position + Vector3.new(0, 5, 0)
+            print("📍 Dragon جاي عندك")
+        end
+    end
+end)
+
+-- حدث زر الإغلاق
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+    print("✗ تم إغلاق المتحكم")
+end)
+
+-- رسالة للمستخدم
+if dragonFound then
+    print("✅ وجدت Dragon!")
+    print("🎮 اسحب الإطار عشان تحركه!")
+    print("🐉 استخدم الأزرار للتحكم")
 else
-    print("❌ Dragon Tool مش موجود في المسار!")
-    print("💡 المسار: Workspace.Characters.BLAACKASTA.Dragon-Dragon")
-    
-    -- اعرض رسالة للمستخدم
-    local gui = Instance.new("ScreenGui")
-    gui.Parent = player.PlayerGui
-    
-    local msg = Instance.new("TextLabel")
-    msg.Text = "❌ Dragon Tool مش موجود!\n\nالمسار:\nWorkspace.Characters.BLAACKASTA.Dragon-Dragon"
-    msg.Size = UDim2.new(0.7, 0, 0.3, 0)
-    msg.Position = UDim2.new(0.15, 0, 0.35, 0)
-    msg.BackgroundColor3 = Color3.fromRGB(50, 30, 30)
-    msg.TextColor3 = Color3.new(1, 1, 1)
-    msg.TextWrapped = true
-    msg.Parent = gui
+    print("❌ Dragon مش موجود!")
+    title.Text = "❌ No Dragon"
+    toggleBtn.Text = "❌"
 end
