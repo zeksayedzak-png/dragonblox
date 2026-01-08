@@ -1,85 +1,140 @@
--- 🎒 Dragon Tool Backpack Controller للهاتف
-local player = game.Players.LocalPlayer
-local backpack = player:FindFirstChild("Backpack")
+-- // Script by: Dragon (East) Researcher
+-- // Purpose: Find & Copy AssetId of a specific Chalice model.
 
--- زر بسيط للهاتف
-local gui = Instance.new("ScreenGui")
-gui.Parent = player.PlayerGui
+-- // Loadstring for Phone (paste this in your executor):
+-- loadstring(game:HttpGet("https://pastebin.com/raw/YourPastebinCode"))()
 
--- زر إضافة Tool للـ Backpack
-local addBtn = Instance.new("TextButton")
-addBtn.Text = "🎒 Add Dragon"
-addBtn.Size = UDim2.new(0.25, 0, 0.1, 0)
-addBtn.Position = UDim2.new(0.375, 0, 0.4, 0)
-addBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-addBtn.TextColor3 = Color3.new(1, 1, 1)
-addBtn.Font = Enum.Font.GothamBold
-addBtn.Parent = gui
+-- ==================== UI SETUP ====================
+local Library = loadstring(game:HttpGet("https://pastebin.com/raw/1xw9pU57"))()
+local Window = Library:CreateWindow("Chalice Asset Scanner")
 
--- زر زيادة الموارد
-local resourceBtn = Instance.new("TextButton")
-resourceBtn.Text = "📈 +Resource"
-resourceBtn.Size = UDim2.new(0.25, 0, 0.1, 0)
-resourceBtn.Position = UDim2.new(0.375, 0, 0.52, 0)
-resourceBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
-resourceBtn.TextColor3 = Color3.new(1, 1, 1)
-resourceBtn.Font = Enum.Font.GothamBold
-resourceBtn.Parent = gui
+local MainTab = Window:AddTab("Main")
+local Section = MainTab:AddSection("Search Target: Dragon (East)")
 
--- حدث إضافة الـ Tool
-addBtn.MouseButton1Click:Connect(function()
-    -- ابحث عن الـ Tool
-    local dragonTool = game.Workspace.Characters.BLAACKASTA:FindFirstChild("Dragon-Dragon")
+-- ==================== VARIABLES ====================
+local TargetName = "Dragon (East)-Dragon (East)"
+local TargetPath = "ReplicatedStorage.Assets.Models.Chalices." .. TargetName
+local FoundAssets = {}
+
+-- ==================== SCAN FUNCTION ====================
+local function DeepScan(parent)
+    for _, child in ipairs(parent:GetChildren()) do
+        if child.Name == TargetName then
+            -- Check if it's in the correct path
+            local fullPath = child:GetFullName()
+            if string.find(fullPath, TargetPath) then
+                -- Get AssetId (if exists)
+                local assetId = "N/A"
+                pcall(function()
+                    if child:IsA("Model") or child:IsA("MeshPart") or child:IsA("Decal") then
+                        assetId = tostring(child.AssetId)
+                    elseif child:IsA("Tool") then
+                        assetId = tostring(child.ToolId)
+                    end
+                end)
+                
+                -- Store result
+                table.insert(FoundAssets, {
+                    Instance = child,
+                    Path = fullPath,
+                    AssetId = assetId
+                })
+            end
+        end
+        -- Recursive search
+        DeepScan(child)
+    end
+end
+
+-- ==================== UI ELEMENTS ====================
+local OutputLabel = Section:AddLabel("Ready to scan.")
+local ResultsFolder = Instance.new("Folder")
+ResultsFolder.Name = "ChaliceResults"
+ResultsFolder.Parent = game:GetService("CoreGui")
+
+-- Scan Button
+Section:AddButton("🔍 SCAN NOW", function()
+    FoundAssets = {}
+    OutputLabel:SetText("⏳ Scanning... Please wait.")
     
-    if dragonTool and backpack then
-        -- انسخ الـ Tool للـ Backpack
-        local clone = dragonTool:Clone()
-        clone.Parent = backpack
+    -- Start scan from all top-level services
+    for _, service in ipairs({
+        game:GetService("ReplicatedStorage"),
+        game:GetService("Workspace"),
+        game:GetService("ServerStorage"),
+        game:GetService("ServerScriptService"),
+        game:GetService("StarterPack"),
+        game:GetService("StarterGui"),
+        game:GetService("StarterPlayer")
+    }) do
+        DeepScan(service)
+    end
+    
+    -- Display results
+    if #FoundAssets > 0 then
+        OutputLabel:SetText("✅ Found " .. #FoundAssets .. " instances!")
         
-        addBtn.Text = "✅ Added!"
-        print("🎒 تم إضافة Dragon للـ Backpack")
+        -- Clear old buttons
+        for _, v in ipairs(ResultsFolder:GetChildren()) do
+            if v:IsA("TextButton") then
+                v:Destroy()
+        end end
         
-        task.wait(1)
-        addBtn.Text = "🎒 Add Dragon"
+        -- Create new buttons for each found asset
+        for i, data in ipairs(FoundAssets) do
+            local btn = Instance.new("TextButton")
+            btn.Name = "AssetBtn_" .. i
+            btn.Text = "📋 #" .. i .. " | AssetId: " .. data.AssetId
+            btn.Size = UDim2.new(0.9, 0, 0, 35)
+            btn.Position = UDim2.new(0.05, 0, 0, (i-1)*40)
+            btn.Parent = ResultsFolder
+            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.Font = Enum.Font.SourceSansBold
+            
+            btn.MouseButton1Click:Connect(function()
+                -- Copy to clipboard
+                setclipboard(data.AssetId)
+                OutputLabel:SetText("📋 Copied: " .. data.AssetId)
+                btn.Text = "✅ Copied!"
+                task.wait(1)
+                btn.Text = "📋 #" .. i .. " | AssetId: " .. data.AssetId
+            end)
+        end
     else
-        addBtn.Text = "❌ Not Found"
-        task.wait(1)
-        addBtn.Text = "🎒 Add Dragon"
+        OutputLabel:SetText("❌ No instances found.")
     end
 end)
 
--- حدث زيادة الموارد
-resourceBtn.MouseButton1Click:Connect(function()
-    -- حاول تنفيذ الأمر
-    local success, result = pcall(function()
-        -- جرب تنفيذ INCREASE_RESOURCE
-        if _G.INCREASE_RESOURCE then
-            _G.INCREASE_RESOURCE('TOOLS', 112, 1)
-            return true
-        end
-        
-        -- أو جرب هذا إذا كان فيه RemoteEvent
-        local remote = game:GetService("ReplicatedStorage"):FindFirstChild("INCREASE_RESOURCE")
-        if remote and remote:IsA("RemoteEvent") then
-            remote:FireServer('TOOLS', 112, 1)
-            return true
-        end
-        
-        return false
-    end)
-    
-    if success and result then
-        resourceBtn.Text = "✅ Done!"
-        print("📈 تم زيادة الموارد")
-    else
-        resourceBtn.Text = "❌ Failed"
-        print("❌ فشل تنفيذ الأمر")
+-- Copy All Button
+Section:AddButton("📋 COPY ALL AssetIds", function()
+    if #FoundAssets == 0 then
+        OutputLabel:SetText("⚠️ Scan first!")
+        return
     end
     
-    task.wait(1)
-    resourceBtn.Text = "📈 +Resource"
+    local allText = ""
+    for i, data in ipairs(FoundAssets) do
+        allText = allText .. data.AssetId .. "\n"
+    end
+    
+    setclipboard(allText)
+    OutputLabel:SetText("📋 All " .. #FoundAssets .. " AssetIds copied!")
 end)
 
-print("✅ Dragon Backpack Controller loaded!")
-print("🎒 اضغط 'Add Dragon' لإضافة الـ Tool")
-print("📈 اضغط '+Resource' لزيادة الموارد")
+-- Clear Button
+Section:AddButton("🗑️ CLEAR RESULTS", function()
+    FoundAssets = {}
+    for _, v in ipairs(ResultsFolder:GetChildren()) do
+        if v:IsA("TextButton") then
+            v:Destroy()
+    end end
+    OutputLabel:SetText("🧹 Cleared. Ready for new scan.")
+end)
+
+-- ==================== INFO ====================
+Section:AddLabel("Target: " .. TargetName)
+Section:AddLabel("Expected Path: " .. TargetPath)
+
+-- ==================== FINAL MESSAGE ====================
+OutputLabel:SetText("✅ Loaded! Press SCAN NOW to start.")
