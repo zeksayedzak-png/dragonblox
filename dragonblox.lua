@@ -1,21 +1,14 @@
--- Dragon Fruit الحقيقية من المسار الجديد
-local toolName = "Dragon (East)-Dragon (East)"
-local toolPath = "ReplicatedStorage.Modules.Asset.ItemData.FruitAccessories." .. toolName
-
--- إنشاء واجهة صغيرة قابلة للسحب
+-- Dragon Fruit Assembler (يجمع قطع الفاكهة)
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MiniFruitGUI"
 screenGui.Parent = game.CoreGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0.6, 0, 0.5, 0) -- واجهة صغيرة
-frame.Position = UDim2.new(0.2, 0, 0.25, 0)
+frame.Size = UDim2.new(0.7, 0, 0.8, 0)
+frame.Position = UDim2.new(0.15, 0, 0.1, 0)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-frame.BorderSizePixel = 2
-frame.BorderColor3 = Color3.fromRGB(100, 100, 150)
 frame.Parent = screenGui
 
--- خاصية السحب للنافذة
+-- خاصية السحب
 local isDragging = false
 local dragStart = Vector2.new(0, 0)
 local frameStart = Vector2.new(0, 0)
@@ -34,8 +27,8 @@ game:GetService("UserInputService").InputChanged:Connect(function(input)
         local delta = currentPos - dragStart
         local viewportSize = workspace.CurrentCamera.ViewportSize
         local deltaScale = Vector2.new(delta.X / viewportSize.X, delta.Y / viewportSize.Y)
-        local newX = math.clamp(frameStart.X + deltaScale.X, 0, 0.4)
-        local newY = math.clamp(frameStart.Y + deltaScale.Y, 0, 0.5)
+        local newX = math.clamp(frameStart.X + deltaScale.X, 0, 0.3)
+        local newY = math.clamp(frameStart.Y + deltaScale.Y, 0, 0.2)
         frame.Position = UDim2.new(newX, 0, newY, 0)
     end
 end)
@@ -46,21 +39,21 @@ game:GetService("UserInputService").InputEnded:Connect(function(input)
     end
 end)
 
--- العنوان الصغير
+-- العنوان
 local title = Instance.new("TextLabel")
-title.Text = "🐉 Dragon Fruit"
-title.Size = UDim2.new(1, 0, 0.15, 0)
+title.Text = "🐉 Dragon Fruit Assembler"
+title.Size = UDim2.new(1, 0, 0.1, 0)
 title.Font = Enum.Font.SourceSansBold
-title.TextSize = 18
+title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(255, 100, 100)
 title.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 title.Parent = frame
 
--- زر الإغلاق الصغير
+-- زر الإغلاق
 local closeBtn = Instance.new("TextButton")
 closeBtn.Text = "X"
-closeBtn.Size = UDim2.new(0.15, 0, 0.15, 0)
-closeBtn.Position = UDim2.new(0.85, 0, 0, 0)
+closeBtn.Size = UDim2.new(0.1, 0, 0.1, 0)
+closeBtn.Position = UDim2.new(0.9, 0, 0, 0)
 closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.Font = Enum.Font.SourceSansBold
@@ -70,119 +63,143 @@ closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- البحث عن الفاكهة في المسار الجديد
-local function findFruitInNewPath()
-    local pathParts = {"ReplicatedStorage", "Modules", "Asset", "ItemData", "FruitAccessories"}
-    
+-- قائمة المسارات
+local paths = {
+    {name = "🎮 بيانات الفاكهة", path = "ReplicatedStorage.Modules.Asset.ItemData.FruitAccessories.Dragon (East)-Dragon (East)"},
+    {name = "🔄 نسخة التحول", path = "ReplicatedStorage.Modules.SkinUtil.SkinnedRigs.Transformations.Dragon (East)-Dragon(East)"},
+    {name = "🍷 الكوب الأحمر", path = "ReplicatedStorage.Modules.SkinUtil.SkinnedRigs.Chalices.Dragon(East)-Dragon (East)"},
+    {name = "🎨 مظهر الفاكهة", path = "ReplicatedStorage.Modules.SkinUtil.FruitSkins.Dragon(East)-Dragon (East)"},
+    {name = "🎬 نسخة العرض", path = "Workspace.BaristaCutsceneDummy_Stored.Chalices.Dragon(East)-Dragon (East)"},
+    {name = "📦 الموديل الأساسي", path = "ReplicatedStorage.Assets.Models.Chalices.Dragon (East)-Dragon (East)"}
+}
+
+local resultsFrame = Instance.new("ScrollingFrame")
+resultsFrame.Size = UDim2.new(0.95, 0, 0.6, 0)
+resultsFrame.Position = UDim2.new(0.025, 0, 0.15, 0)
+resultsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+resultsFrame.Parent = frame
+
+local function checkPath(fullPath)
+    local parts = string.split(fullPath, ".")
     local current = game
-    for _, part in ipairs(pathParts) do
+    
+    for _, part in ipairs(parts) do
         current = current:FindFirstChild(part)
         if not current then
-            return nil
+            return false, nil
         end
     end
     
-    return current:FindFirstChild(toolName)
+    return true, current
 end
 
--- زر البحث السريع
-local findBtn = Instance.new("TextButton")
-findBtn.Text = "🔍 ابحث في المسار الجديد"
-findBtn.Size = UDim2.new(0.9, 0, 0.15, 0)
-findBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
-findBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
-findBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-findBtn.Font = Enum.Font.SourceSansBold
-findBtn.Parent = frame
+-- زر فحص كل المسارات
+local scanBtn = Instance.new("TextButton")
+scanBtn.Text = "🔍 افحص جميع المسارات"
+scanBtn.Size = UDim2.new(0.95, 0, 0.08, 0)
+scanBtn.Position = UDim2.new(0.025, 0, 0.77, 0)
+scanBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+scanBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+scanBtn.Font = Enum.Font.SourceSansBold
+scanBtn.Parent = frame
 
--- زر الاستدعاء
-local spawnBtn = Instance.new("TextButton")
-spawnBtn.Text = "✨ استدعي الفاكهة"
-spawnBtn.Size = UDim2.new(0.9, 0, 0.15, 0)
-spawnBtn.Position = UDim2.new(0.05, 0, 0.4, 0)
-spawnBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 150)
-spawnBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-findBtn.Font = Enum.Font.SourceSansBold
-spawnBtn.Parent = frame
+-- زر إنشاء فاكهة
+local createBtn = Instance.new("TextButton")
+createBtn.Text = "✨ أنشئ فاكهة كاملة"
+createBtn.Size = UDim2.new(0.95, 0, 0.08, 0)
+createBtn.Position = UDim2.new(0.025, 0, 0.87, 0)
+createBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 150)
+createBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+createBtn.Font = Enum.Font.SourceSansBold
+createBtn.Parent = frame
 
--- زر الإعطاء للحقيبة
-local giveBtn = Instance.new("TextButton")
-giveBtn.Text = "🎒 ضع في حقيبتي"
-giveBtn.Size = UDim2.new(0.9, 0, 0.15, 0)
-giveBtn.Position = UDim2.new(0.05, 0, 0.6, 0)
-giveBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
-giveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-giveBtn.Font = Enum.Font.SourceSansBold
-giveBtn.Parent = frame
-
--- حالة البحث
-local status = Instance.new("TextLabel")
-status.Text = "⚡ جاهز للبحث"
-status.Size = UDim2.new(1, 0, 0.15, 0)
-status.Position = UDim2.new(0, 0, 0.8, 0)
-status.TextColor3 = Color3.fromRGB(200, 200, 100)
-status.Parent = frame
-
-local foundFruit = nil
-
-findBtn.MouseButton1Click:Connect(function()
-    foundFruit = findFruitInNewPath()
+scanBtn.MouseButton1Click:Connect(function()
+    resultsFrame:ClearAllChildren()
     
-    if foundFruit then
-        status.Text = "✅ وجدت: " .. foundFruit.Name
-        status.TextColor3 = Color3.fromRGB(100, 255, 100)
-        print("✅ المسار الصحيح: " .. foundFruit:GetFullName())
+    local foundCount = 0
+    local foundObjects = {}
+    
+    for i, pathData in ipairs(paths) do
+        local exists, obj = checkPath(pathData.path)
         
-        -- فحص إذا كانت Tool
-        if foundFruit:IsA("Tool") then
-            status.Text = status.Text .. " (أداة)"
-        end
-    else
-        status.Text = "❌ ما لقيت في المسار"
-        status.TextColor3 = Color3.fromRGB(255, 100, 100)
-    end
-end)
-
-spawnBtn.MouseButton1Click:Connect(function()
-    if not foundFruit then
-        status.Text = "⚠️ ابحث أولاً"
-        status.TextColor3 = Color3.fromRGB(255, 150, 50)
-        return
-    end
-    
-    local clone = foundFruit:Clone()
-    clone.Parent = workspace
-    
-    -- وضعها أمام اللاعب
-    local player = game.Players.LocalPlayer
-    if player.Character then
-        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            clone:PivotTo(hrp.CFrame * CFrame.new(0, 0, -3))
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 0, 30)
+        label.Position = UDim2.new(0, 0, 0, (i-1)*35)
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = resultsFrame
+        
+        if exists then
+            foundCount = foundCount + 1
+            label.Text = "✅ " .. pathData.name
+            label.TextColor3 = Color3.fromRGB(100, 255, 100)
+            table.insert(foundObjects, obj)
+        else
+            label.Text = "❌ " .. pathData.name
+            label.TextColor3 = Color3.fromRGB(255, 100, 100)
         end
     end
     
-    status.Text = "✨ استدعيت في الأرض"
-    status.TextColor3 = Color3.fromRGB(255, 255, 100)
+    resultsFrame.CanvasSize = UDim2.new(0, 0, 0, #paths * 35)
 end)
 
-giveBtn.MouseButton1Click:Connect(function()
-    if not foundFruit then
-        status.Text = "⚠️ ابحث أولاً"
-        status.TextColor3 = Color3.fromRGB(255, 150, 50)
-        return
-    end
-    
+createBtn.MouseButton1Click:Connect(function()
+    -- محاولة إنشاء فاكهة من البيانات
     local player = game.Players.LocalPlayer
     local backpack = player:FindFirstChild("Backpack")
     
-    if backpack then
-        local clone = foundFruit:Clone()
-        clone.Parent = backpack
-        status.Text = "🎒 في حقيبتك!"
-        status.TextColor3 = Color3.fromRGB(100, 255, 200)
+    if not backpack then
+        print("❌ ما في حقيبة")
+        return
+    end
+    
+    -- محاولة الحصول على الموديل الأساسي
+    local modelPath = "ReplicatedStorage.Assets.Models.Chalices.Dragon (East)-Dragon (East)"
+    local parts = string.split(modelPath, ".")
+    local current = game
+    
+    for _, part in ipairs(parts) do
+        current = current:FindFirstChild(part)
+        if not current then break end
+    end
+    
+    if current and current:IsA("Model") then
+        -- إنشاء Tool جديد
+        local newTool = Instance.new("Tool")
+        newTool.Name = "Dragon_Fruit_Final"
+        newTool.ToolTip = "Dragon Fruit (East)"
+        
+        -- نسخ الموديل داخل الـ Tool
+        local modelClone = current:Clone()
+        modelClone.Parent = newTool
+        
+        -- إضافة خصائص التغذية
+        local nutrition = Instance.new("NumberValue")
+        nutrition.Name = "Nutrition"
+        nutrition.Value = 100
+        nutrition.Parent = newTool
+        
+        local health = Instance.new("NumberValue")
+        health.Name = "HealthBonus"
+        health.Value = 50
+        health.Parent = newTool
+        
+        -- إضافة Script للأكل
+        local eatScript = Instance.new("Script")
+        eatScript.Name = "EatScript"
+        eatScript.Source = [[
+            tool = script.Parent
+            
+            tool.Activated:Connect(function()
+                local humanoid = game.Players.LocalPlayer.Character.Humanoid
+                humanoid.Health = humanoid.Health + tool.HealthBonus.Value
+                tool:Destroy()
+            end)
+        ]]
+        eatScript.Parent = newTool
+        
+        newTool.Parent = backpack
+        print("✅ فاكهة من صنعي في حقيبتك!")
     else
-        status.Text = "❌ ما في حقيبة"
-        status.TextColor3 = Color3.fromRGB(255, 100, 100)
+        print("❌ ما أقدرش أنشئ الفاكهة")
     end
 end)
