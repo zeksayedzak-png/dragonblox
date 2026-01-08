@@ -1,11 +1,9 @@
--- Dragon Tool Cloner
+-- Dragon Tool Cloner مع تحكم بالإصبع للوجهة
 local toolName = "Dragon (East)-Dragon (East)"
-local toolPath = "ReplicatedStorage.Assets.Models.Chalices." .. toolName
 
 -- البحث عن الأداة الأصلية
 local originalTool = nil
 local function findTool()
-    -- جرب المسار المباشر أول
     originalTool = game:GetService("ReplicatedStorage"):FindFirstChild("Assets")
     if originalTool then
         originalTool = originalTool:FindFirstChild("Models")
@@ -17,7 +15,6 @@ local function findTool()
         end
     end
     
-    -- إذا ما لقيش، ابحث في كل اللعبة
     if not originalTool then
         for _, obj in pairs(game:GetDescendants()) do
             if obj.Name == toolName and obj:IsA("Tool") then
@@ -98,6 +95,105 @@ info.Position = UDim2.new(0, 0, 0.75, 0)
 info.TextColor3 = Color3.fromRGB(150, 255, 150)
 info.Parent = frame
 
+-- ======== الكود الجديد للتحكم بالإصبع ========
+local function addTouchControl(toolClone)
+    if not toolClone then return end
+    
+    -- إنشاء جويستيك
+    local joypadGui = Instance.new("ScreenGui")
+    joypadGui.Name = "TouchControl"
+    joypadGui.Parent = game.CoreGui
+    
+    -- الدائرة الخارجية
+    local outer = Instance.new("Frame")
+    outer.Name = "JoypadOuter"
+    outer.Size = UDim2.new(0.2, 0, 0.2, 0)
+    outer.Position = UDim2.new(0.05, 0, 0.75, 0)
+    outer.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    outer.BackgroundTransparency = 0.5
+    outer.Parent = joypadGui
+    
+    -- الدائرة الداخلية المتحركة
+    local inner = Instance.new("Frame")
+    inner.Name = "JoypadInner"
+    inner.Size = UDim2.new(0.4, 0, 0.4, 0)
+    inner.Position = UDim2.new(0.3, 0, 0.3, 0)
+    inner.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    inner.BackgroundTransparency = 0.3
+    inner.Parent = outer
+    
+    -- متغيرات التحكم
+    local isDragging = false
+    local dragStart = Vector2.new(0, 0)
+    
+    -- دالة تحديث وجهة الاداة
+    local function updateToolFace(direction)
+        if not toolClone or not toolClone:IsDescendantOf(workspace) then
+            return
+        end
+        
+        -- تدوير الاداة حسب اتجاه الإصبع
+        local lookVector = Vector3.new(direction.X, 0, direction.Y)
+        if lookVector.Magnitude > 0.1 then
+            local targetCFrame = CFrame.new(toolClone:GetPivot().Position, 
+                toolClone:GetPivot().Position + lookVector * 10)
+            toolClone:PivotTo(targetCFrame)
+        end
+    end
+    
+    -- التحكم باللمس
+    inner.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            isDragging = true
+            dragStart = Vector2.new(input.Position.X, input.Position.Y)
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if isDragging and input.UserInputType == Enum.UserInputType.Touch then
+            local currentPos = Vector2.new(input.Position.X, input.Position.Y)
+            local delta = currentPos - dragStart
+            
+            -- تحريك الدائرة الداخلية
+            local maxMove = 30
+            local moveX = math.clamp(delta.X, -maxMove, maxMove)
+            local moveY = math.clamp(delta.Y, -maxMove, maxMove)
+            
+            inner.Position = UDim2.new(0.3, moveX, 0.3, moveY)
+            
+            -- حساب الاتجاه
+            local direction = Vector2.new(moveX/maxMove, moveY/maxMove)
+            updateToolFace(direction)
+        end
+    end)
+    
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            if isDragging then
+                isDragging = false
+                inner.Position = UDim2.new(0.3, 0, 0.3, 0)
+            end
+        end
+    end)
+    
+    -- زر إغلاق التحكم
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Text = "❌"
+    closeBtn.Size = UDim2.new(0.1, 0, 0.1, 0)
+    closeBtn.Position = UDim2.new(0.85, 0, 0, 0)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    closeBtn.Parent = joypadGui
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        joypadGui:Destroy()
+    end)
+    
+    return joypadGui
+end
+-- ======== نهاية كود التحكم بالإصبع ========
+
 -- البحث عن الأداة أول مرة
 findTool()
 
@@ -118,11 +214,9 @@ spawnBtn.MouseButton1Click:Connect(function()
         return
     end
     
-    -- نسخ الأداة
     local clone = originalTool:Clone()
     clone.Parent = workspace
     
-    -- وضعه أمام اللاعب
     local player = game.Players.LocalPlayer
     if player.Character then
         local char = player.Character
@@ -132,7 +226,11 @@ spawnBtn.MouseButton1Click:Connect(function()
         end
     end
     
-    updateStatus("✨ الأداة استدعيت في الأرض", Color3.fromRGB(255, 255, 0))
+    -- إضافة تحكم بالإصبع
+    task.wait(0.5)
+    addTouchControl(clone)
+    
+    updateStatus("✨ الأداة استدعيت + تحكم بالإصبع", Color3.fromRGB(255, 255, 0))
 end)
 
 giveBtn.MouseButton1Click:Connect(function()
@@ -147,7 +245,7 @@ giveBtn.MouseButton1Click:Connect(function()
     if backpack then
         local clone = originalTool:Clone()
         clone.Parent = backpack
-        updateStatus("🎁 الأداة في حقيبتك الآن!", Color3.fromRGB(0, 255, 150))
+        updateStatus("🎁 الأداة في حقيبتك!", Color3.fromRGB(0, 255, 150))
     else
         updateStatus("❌ ما في حقيبة", Color3.fromRGB(255, 100, 100))
     end
@@ -167,7 +265,12 @@ dropBtn.MouseButton1Click:Connect(function()
             local clone = originalTool:Clone()
             clone.Parent = workspace
             clone:PivotTo(hrp.CFrame * CFrame.new(0, 0, -3))
-            updateStatus("⬇️ الأداة وضعت تحتك", Color3.fromRGB(150, 200, 255))
+            
+            -- إضافة تحكم بالإصبع
+            task.wait(0.5)
+            addTouchControl(clone)
+            
+            updateStatus("⬇️ الأداة وضعت + تحكم بالإصبع", Color3.fromRGB(150, 200, 255))
         end
     end
 end)
@@ -179,213 +282,3 @@ if originalTool then
 else
     updateStatus("❌ اضغط 'ابحث عن الأداة'", Color3.fromRGB(255, 100, 100))
 end
-
--- ==================== تحكم بالإصبع للوجهة ====================
-local function addTouchControl(toolClone)
-    -- التأكد من وجود الاداة
-    if not toolClone then return end
-    
-    -- إنشاء جويستيك للتحكم
-    local joypadGui = Instance.new("ScreenGui")
-    joypadGui.Name = "TouchControl"
-    joypadGui.Parent = game.CoreGui
-    
-    -- الدائرة الخارجية
-    local outer = Instance.new("Frame")
-    outer.Name = "JoypadOuter"
-    outer.Size = UDim2.new(0.25, 0, 0.25, 0)
-    outer.Position = UDim2.new(0.05, 0, 0.7, 0)
-    outer.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    outer.BackgroundTransparency = 0.6
-    outer.BorderSizePixel = 2
-    outer.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    outer.Parent = joypadGui
-    
-    -- الدائرة الداخلية المتحركة
-    local inner = Instance.new("Frame")
-    inner.Name = "JoypadInner"
-    inner.Size = UDim2.new(0.4, 0, 0.4, 0)
-    inner.Position = UDim2.new(0.3, 0, 0.3, 0)
-    inner.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    inner.BackgroundTransparency = 0.3
-    inner.BorderSizePixel = 0
-    inner.Parent = outer
-    
-    -- نص مساعد
-    local helpText = Instance.new("TextLabel")
-    helpText.Text = "🔄 اسحب للتحكم في الوجهة"
-    helpText.Size = UDim2.new(1, 0, 0.2, 0)
-    helpText.Position = UDim2.new(0, 0, -0.25, 0)
-    helpText.TextColor3 = Color3.fromRGB(255, 255, 100)
-    helpText.BackgroundTransparency = 1
-    helpText.Font = Enum.Font.SourceSansBold
-    helpText.Parent = outer
-    
-    -- متغيرات التحكم
-    local isDragging = false
-    local dragStart = Vector2.new(0, 0)
-    local innerStart = Vector2.new(0, 0)
-    local maxDistance = 50 -- أقصى مسافة للدائرة الداخلية
-    
-    -- دالة تحديث وجهة الاداة
-    local function updateToolFace(direction)
-        if not toolClone or not toolClone:IsDescendantOf(workspace) then
-            return
-        end
-        
-        -- حساب الزاوية من الاتجاه
-        local angle = math.atan2(direction.Y, direction.X)
-        local degrees = math.deg(angle)
-        
-        -- تدوير الاداة حسب اتجاه الإصبع
-        local lookVector = Vector3.new(direction.X, 0, direction.Y)
-        if lookVector.Magnitude > 0.1 then
-            local targetCFrame = CFrame.new(toolClone:GetPivot().Position, 
-                toolClone:GetPivot().Position + lookVector * 10)
-            toolClone:PivotTo(targetCFrame)
-        end
-    end
-    
-    -- التحكم باللمس
-    inner.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            isDragging = true
-            dragStart = Vector2.new(input.Position.X, input.Position.Y)
-            innerStart = Vector2.new(inner.Position.X.Scale, inner.Position.Y.Scale)
-        end
-    end)
-    
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if isDragging and input.UserInputType == Enum.UserInputType.Touch then
-            -- حساب حركة الإصبع
-            local currentPos = Vector2.new(input.Position.X, input.Position.Y)
-            local delta = currentPos - dragStart
-            
-            -- تحويل البكسلات إلى مقياس 0-1
-            local deltaScale = Vector2.new(
-                delta.X / (outer.AbsoluteSize.X * 0.5),
-                delta.Y / (outer.AbsoluteSize.Y * 0.5)
-            )
-            
-            -- تحديد الحد الأقصى للحركة
-            local magnitude = math.min(deltaScale.Magnitude, 1)
-            local normalizedDelta = deltaScale.Unit * magnitude
-            
-            -- تحديث موقع الدائرة الداخلية
-            inner.Position = UDim2.new(
-                0.5 + normalizedDelta.X * 0.4,
-                0,
-                0.5 + normalizedDelta.Y * 0.4,
-                0
-            )
-            
-            -- تحديث وجهة الاداة
-            updateToolFace(Vector2.new(normalizedDelta.X, normalizedDelta.Y))
-        end
-    end)
-    
-    game:GetService("UserInputService").InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            if isDragging then
-                isDragging = false
-                -- إرجاع الدائرة للوسط
-                inner.Position = UDim2.new(0.3, 0, 0.3, 0)
-            end
-        end
-    end)
-    
-    -- زر إغلاق التحكم
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Text = "❌ أغلق التحكم"
-    closeBtn.Size = UDim2.new(0.3, 0, 0.15, 0)
-    closeBtn.Position = UDim2.new(0.7, 0, 0.85, 0)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeBtn.Font = Enum.Font.SourceSansBold
-    closeBtn.Parent = joypadGui
-    
-    closeBtn.MouseButton1Click:Connect(function()
-        joypadGui:Destroy()
-    end)
-    
-    return joypadGui
-end
-
--- ==================== تعديل الأزرار لتفعيل التحكم ====================
-
--- تعديل زر الاستدعاء
-spawnBtn.MouseButton1Click:Connect(function()
-    if not originalTool then
-        updateStatus("⚠️ ابحث عن الأداة أولاً", Color3.fromRGB(255, 150, 0))
-        return
-    end
-    
-    -- نسخ الأداة
-    local clone = originalTool:Clone()
-    clone.Parent = workspace
-    
-    -- وضعه أمام اللاعب
-    local player = game.Players.LocalPlayer
-    if player.Character then
-        local char = player.Character
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            clone:PivotTo(hrp.CFrame * CFrame.new(0, 0, -5))
-        end
-    end
-    
-    -- إضافة تحكم بالإصبع بعد الاستدعاء
-    task.wait(0.5)
-    addTouchControl(clone)
-    
-    updateStatus("✨ الأداة استدعيت + تحكم بالإصبع مفعل", Color3.fromRGB(255, 255, 0))
-end)
-
--- تعديل زر الإعطاء لنفسك
-giveBtn.MouseButton1Click:Connect(function()
-    if not originalTool then
-        updateStatus("⚠️ ابحث عن الأداة أولاً", Color3.fromRGB(255, 150, 0))
-        return
-    end
-    
-    local player = game.Players.LocalPlayer
-    local backpack = player:FindFirstChild("Backpack")
-    
-    if backpack then
-        local clone = originalTool:Clone()
-        clone.Parent = backpack
-        
-        -- إضافة تحكم بالإصبع عند الإعطاء
-        task.wait(0.5)
-        addTouchControl(clone)
-        
-        updateStatus("🎁 الأداة في حقيبتك + تحكم بالإصبع", Color3.fromRGB(0, 255, 150))
-    else
-        updateStatus("❌ ما في حقيبة", Color3.fromRGB(255, 100, 100))
-    end
-end)
-
--- تعديل زر وضع في الأرض
-dropBtn.MouseButton1Click:Connect(function()
-    if not originalTool then
-        updateStatus("⚠️ ابحث عن الأداة أولاً", Color3.fromRGB(255, 150, 0))
-        return
-    end
-    
-    local player = game.Players.LocalPlayer
-    local char = player.Character
-    if char then
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local clone = originalTool:Clone()
-            clone.Parent = workspace
-            clone:PivotTo(hrp.CFrame * CFrame.new(0, 0, -3))
-            
-            -- إضافة تحكم بالإصبع عند الوضع
-            task.wait(0.5)
-            addTouchControl(clone)
-            
-            updateStatus("⬇️ الأداة وضعت + تحكم بالإصبع", Color3.fromRGB(150, 200, 255))
-        end
-    end
-end)
